@@ -15,12 +15,24 @@ call vundle#begin()
 call vundle#end()
 filetype plugin indent on
 
+let WSL2_SUPPORT = 0
+if system('uname -r') =~ "microsoft"
+    if $vim_disable_wsl2_support != "true"
+        let WSL2_SUPPORT = 1
+    endif
+endif
+
 syntax on
 set encoding=utf-8
 set mouse=a
 set number
 set smartindent
 set title
+
+" https://www.cyberciti.biz/faq/vim-vi-text-editor-save-file-without-root-permission
+command W :execute ':silent w !sudo tee % > /dev/null' | :edit!
+
+command Wq :execute ':silent w !sudo tee % > /dev/null' | :q
 
 " https://vim.fandom.com/wiki/Disable_beeping
 set noerrorbells visualbell t_vb=
@@ -39,11 +51,22 @@ set tabstop=4
 set shiftwidth=4
 
 " https://waylonwalker.com/vim-wsl-clipboard/#wsl2
-if system('uname -r') =~ "microsoft"
-    augroup Yank
+"if WSL2_SUPPORT
+"    augroup Yank
+"        autocmd!
+"        autocmd TextYankPost * :call system('/mnt/c/windows/system32/clip.exe ',@")
+"    augroup END
+"endif
+
+if WSL2_SUPPORT
+    " https://github.com/microsoft/WSL/issues/4440
+    let s:clip = '/mnt/c/Windows/System32/clip.exe' " change this path according to your mount point
+    if executable(s:clip)
+        augroup WSLYank
         autocmd!
-        autocmd TextYankPost * :call system('/mnt/c/windows/system32/clip.exe ',@")
-    augroup END
+        autocmd TextYankPost * if v:event.operator ==# 'y' | call system(s:clip, @0) | endif
+        augroup END
+    endif
 endif
 
 " https://github.com/joshdick/onedark.vim
@@ -59,6 +82,7 @@ colorscheme onedark
 let g:lightline = { 'colorscheme': 'onedark' }
 
 " https://github.com/Yggdroot/indentLine
+" :IndentLinesToggle toggles lines on and off.
 let g:indentLine_setColors = 0
 let g:indentLine_char_list = ['|', '¦', '┆', '┊']
 
