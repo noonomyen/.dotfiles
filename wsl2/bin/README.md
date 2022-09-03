@@ -1,5 +1,5 @@
-wsl2_fastcd.sh -> /usr/bin/wsl2_fastcd (wsl2 fast change directory)  
-- change directory immediately after login)  
+wsl2_fastcd.sh -> /usr/bin/wsl2_fastcd  
+- change directory immediately after login  
 
 Windows Terminal Setting  
 ```
