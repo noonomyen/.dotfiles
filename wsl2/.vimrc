@@ -1,4 +1,6 @@
 " https://github.com/VundleVim/Vundle.vim
+set encoding=utf-8
+set shell=/bin/bash
 set nocompatible
 filetype off
 set rtp+=~/.vim/bundle/Vundle.vim
@@ -15,12 +17,12 @@ call vundle#begin()
 call vundle#end()
 filetype plugin indent on
 
-let WSL2_SUPPORT = 0
-if system('uname -r') =~ "microsoft"
-    if $vim_disable_wsl2_support != "true"
-        let WSL2_SUPPORT = 1
-    endif
-endif
+let WSL2_SUPPORT = 1
+" if system('uname -r') =~ "Microsoft"
+"     if $vim_disable_wsl2_support != "true"
+"         let WSL2_SUPPORT = 1
+"     endif
+" endif
 
 syntax on
 set encoding=utf-8
