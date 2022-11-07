@@ -1,2 +1,1 @@
-### .dotfiles of noonomyen ^_^
-
+### .dotfiles

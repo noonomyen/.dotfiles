@@ -1,0 +1,15 @@
+#!/usr/bin/bash
+
+PWD=$(pwd)
+PWD=${PWD//\//\\}
+
+if [ ! -z "$1" ]; then
+    SELECT=${1//\//\\}
+    PWD="$PWD\\$SELECT"
+fi
+
+echo "\\\\wsl.localhost\\Ubuntu-22.04$PWD"
+
+explorer.exe "\\\\wsl.localhost\\Ubuntu-22.04$PWD"
+
+exit 0

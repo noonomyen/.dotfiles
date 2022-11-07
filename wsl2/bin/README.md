@@ -1,8 +1,38 @@
-wsl2_fastcd.sh -> /usr/bin/wsl2_fastcd  
-- change directory immediately after login  
+### wsl2_fastcd -> /usr/bin  
+- Change directory immediately after login.  
+### drop_caches -> /usr/bin  
+- Drop cache command.  
+### explorer -> /usr/bin  
+- Run explorer.exe from wsl to Windows, call target via bash command.  
 
-Windows Terminal Setting  
+---
+
+### Custom bin path
+
+#### preload
 ```
-"commandline": "wsl --distribution Ubuntu --user noonomyen --exec /usr/bin/wsl2_fastcd login noonomyen"
+source /cbin/preload
 ```
 
+#### Path
+```
+/cbin
+├── bin <- binary symbolic link.
+├── ...
+├── ...
+└── preload
+```
+
+---
+
+### Windows Terminal Setting
+
+#### wsl2_fastcd
+```
+"commandline": "wsl --distribution Ubuntu-22.04 --user noonomyen --exec /usr/bin/wsl2_fastcd login noonomyen"
+```
+
+#### login to home dir
+```
+wsl --distribution Ubuntu-22.04 --user noonomyen  --cd ~
+```

@@ -18,7 +18,7 @@ call vundle#end()
 filetype plugin indent on
 
 let WSL2_SUPPORT = 1
-" if system('uname -r') =~ "Microsoft"
+" if system('uname -r') =~ "microsoft"
 "     if $vim_disable_wsl2_support != "true"
 "         let WSL2_SUPPORT = 1
 "     endif
@@ -93,4 +93,17 @@ nnoremap <leader>n :NERDTreeFocus<CR>
 nnoremap <C-n> :NERDTree<CR>
 nnoremap <C-t> :NERDTreeToggle<CR>
 nnoremap <C-f> :NERDTreeFind<CR>
+
+" https://github.com/vim-airline/vim-airline
+let g:airline#extensions#tabline#enabled = 1
+
+" https://vim.fandom.com/wiki/Map_Ctrl-Backspace_to_delete_previous_word
+noremap! <C-BS> <C-w>
+noremap! <C-h> <C-w>
+inoremap <C-w> <C-\><C-o>dB
+inoremap <C-BS> <C-\><C-o>db
+
+" https://coderwall.com/p/bh4rwg/vim-disable-syntax-highlighter-only-for-markdown
+autocmd BufRead,BufNewFile {*.markdown,*.mdown,*.mkdn,*.md,*.mkd,*.mdwn,*.mdtxt,*.mdtext,*.text} set filetype=markdown
+autocmd FileType markdown setlocal syntax=off spell
 
