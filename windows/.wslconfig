@@ -1,0 +1,15 @@
+[wsl2]
+guiApplications=true
+
+processors=12
+
+memory=64GB
+swap=20GB
+swapfile=C:\\wsl\\wsl-swap.vhdx
+pageReporting=true
+
+localhostforwarding=true
+
+nestedVirtualization=true
+
+debugConsole=true
