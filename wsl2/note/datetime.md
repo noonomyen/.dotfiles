@@ -4,7 +4,7 @@
 
 ---
 
-### Install
+### install
 ```sh
 sudo apt install chrony
 ```
