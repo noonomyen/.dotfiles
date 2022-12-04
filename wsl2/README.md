@@ -1,0 +1,4 @@
+- root -> /
+- etc -> /etc
+- cbin -> /cbin
+- bin -> /usr/bin
