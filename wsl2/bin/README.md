@@ -4,6 +4,8 @@
 - Drop cache command.  
 ### explorer -> /usr/bin  
 - Run explorer.exe from wsl to Windows, call target via bash command.  
+### wsl2_get_hostip -> /usr/bin
+- Get host ip address.  
 
 ---
 
