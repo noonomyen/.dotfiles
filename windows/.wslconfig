@@ -1,11 +1,12 @@
 [wsl2]
 guiApplications=true
 
+kernel=c:\\wsl\\WSL2_CUSTOM_KERNEL
+
 processors=12
 
-memory=64GB
+memory=12GB
 swap=20GB
-swapfile=C:\\wsl\\wsl-swap.vhdx
 pageReporting=true
 
 localhostforwarding=true
