@@ -14,5 +14,8 @@ source $ZSH/oh-my-zsh.sh
 
 export COLORTERM=truecolor
 
+unsetopt BEEP
+
 bindkey '^H' backward-kill-word
 wsl2_fastcd $PWD
+

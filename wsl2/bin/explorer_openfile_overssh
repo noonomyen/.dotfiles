@@ -1,0 +1,17 @@
+#!/usr/bin/bash
+
+if [ ! -d "/tmp/explorer_openfile_overssh" ]; then
+    mkdir /tmp/explorer_openfile_overssh
+fi
+
+rm -rf /tmp/explorer_openfile_overssh/*
+
+scp $@ /tmp/explorer_openfile_overssh/
+
+FILE=$(ls /tmp/explorer_openfile_overssh | head -1)
+
+echo "\\\\wsl.localhost\\Ubuntu-22.04\\tmp\\explorer_openfile_overssh\\$FILE"
+
+explorer.exe "\\\\wsl.localhost\\Ubuntu-22.04\\tmp\\explorer_openfile_overssh\\$FILE"
+
+exit 0

@@ -1,6 +1,6 @@
 " https://github.com/VundleVim/Vundle.vim
 set encoding=utf-8
-set shell=/bin/bash
+set shell=/usr/bin/bash
 set nocompatible
 filetype off
 set rtp+=~/.vim/bundle/Vundle.vim
@@ -8,21 +8,15 @@ call vundle#begin()
     Plugin 'sheerun/vim-polyglot'
     Plugin 'VundleVim/Vundle.vim'
     Plugin 'Yggdroot/indentLine'
-    Plugin 'Valloric/YouCompleteMe'
+    Plugin 'ycm-core/YouCompleteMe'
     Plugin 'vim-airline/vim-airline'
     Plugin 'vim-airline/vim-airline-themes'
     Plugin 'preservim/nerdtree'
     Plugin 'tpope/vim-fugitive'
     Plugin 'airblade/vim-gitgutter'
+    Plugin 'mg979/vim-visual-multi'
 call vundle#end()
 filetype plugin indent on
-
-let WSL2_SUPPORT = 1
-" if system('uname -r') =~ "microsoft"
-"     if $vim_disable_wsl2_support != "true"
-"         let WSL2_SUPPORT = 1
-"     endif
-" endif
 
 syntax on
 set encoding=utf-8
@@ -52,23 +46,13 @@ set expandtab
 set tabstop=4
 set shiftwidth=4
 
-" https://waylonwalker.com/vim-wsl-clipboard/#wsl2
-"if WSL2_SUPPORT
-"    augroup Yank
-"        autocmd!
-"        autocmd TextYankPost * :call system('/mnt/c/windows/system32/clip.exe ',@")
-"    augroup END
-"endif
-
-if WSL2_SUPPORT
-    " https://github.com/microsoft/WSL/issues/4440
-    let s:clip = '/mnt/c/Windows/System32/clip.exe' " change this path according to your mount point
-    if executable(s:clip)
-        augroup WSLYank
-        autocmd!
-        autocmd TextYankPost * if v:event.operator ==# 'y' | call system(s:clip, @0) | endif
-        augroup END
-    endif
+" https://github.com/microsoft/WSL/issues/4440
+let s:clip = '/mnt/c/Windows/System32/clip.exe'
+if executable(s:clip)
+    augroup WSLYank
+    autocmd!
+    autocmd TextYankPost * if v:event.operator ==# 'y' | call system(s:clip, @0) | endif
+    augroup END
 endif
 
 " https://github.com/joshdick/onedark.vim
@@ -90,7 +74,7 @@ let g:indentLine_char_list = ['|', '¦', '┆', '┊']
 
 " https://github.com/preservim/nerdtree
 nnoremap <leader>n :NERDTreeFocus<CR>
-nnoremap <C-n> :NERDTree<CR>
+nnoremap <C-\> :NERDTree<CR>
 nnoremap <C-t> :NERDTreeToggle<CR>
 nnoremap <C-f> :NERDTreeFind<CR>
 
@@ -104,6 +88,38 @@ inoremap <C-w> <C-\><C-o>dB
 inoremap <C-BS> <C-\><C-o>db
 
 " https://coderwall.com/p/bh4rwg/vim-disable-syntax-highlighter-only-for-markdown
-autocmd BufRead,BufNewFile {*.markdown,*.mdown,*.mkdn,*.md,*.mkd,*.mdwn,*.mdtxt,*.mdtext,*.text} set filetype=markdown
-autocmd FileType markdown setlocal syntax=off spell
+"autocmd BufRead,BufNewFile {*.markdown,*.mdown,*.mkdn,*.md,*.mkd,*.mdwn,*.mdtxt,*.mdtext,*.text} set filetype=markdown
+"autocmd FileType markdown setlocal syntax=off spell
+
+" https://vi.stackexchange.com/a/24396
+let g:vim_json_syntax_conceal = 0
+let g:vim_markdown_conceal = 0
+let g:vim_markdown_conceal_code_blocks = 0
+
+" https://github.com/ycm-core/YouCompleteMe/issues/2015#issuecomment-189917191
+set completeopt-=preview
+
+" https://superuser.com/a/884981
+nnoremap <C-S-Left> :tabprevious<CR>
+nnoremap <C-S-Right> :tabnext<CR>
+
+" https://github.com/mg979/vim-visual-multi/wiki/Mappings#full-mappings-list
+let g:VM_maps = {}
+let g:VM_default_mappings = 0
+let g:VM_maps["Add Cursor Down"] = '<M-Down>'
+let g:VM_maps["Add Cursor Up"] = '<M-Up>'
+" it work but i don't understand
+let g:VM_maps['Find Under'] = '<>'
+let g:VM_maps['Find Subword Under'] = '<>'
+
+inoremap <C-Up> <Esc>4ki
+nnoremap <C-Up> <Esc>4k
+inoremap <C-Down> <Esc>4ji
+nnoremap <C-Down> <Esc>4j
+
+" undo
+inoremap <C-u> <Esc>:u<CR>
+nnoremap <C-u> <Esc>:u<CR>
+" redo
+inoremap <C-r> <Esc><C-r>i
 
