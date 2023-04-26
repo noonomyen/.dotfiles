@@ -1,0 +1,21 @@
+#!/usr/bin/bash
+
+if [[ -z $WSL_DISTRO_NAME ]]; then
+    echo "distro name not found from \$WSL_DISTRO_NAME"
+else
+    TARGET=""
+
+    if [[ $# -eq 0 ]]; then
+        TARGET=$PWD
+    else
+        TARGET=$(realpath $1)
+    fi
+
+    TARGET=${TARGET//\//\\}
+    EXPLORER_DIR="\\\\wsl.localhost\\$WSL_DISTRO_NAME$TARGET"
+    echo $EXPLORER_DIR
+
+    explorer.exe $EXPLORER_DIR
+fi
+
+exit 0

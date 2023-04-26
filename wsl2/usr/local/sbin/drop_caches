@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+
+if [[ $# -eq 1 && ($1 -gt 0 && $1 -lt 4) ]]; then
+    echo $1 > /proc/sys/vm/drop_caches
+else
+    echo "Clear memory cache - /proc/sys/vm/drop_caches"
+    echo "1 - page cache only"
+    echo "2 - dentries and inodes"
+    echo "3 - pagecache, dentries, and inodes"
+fi
+

@@ -1,0 +1,28 @@
+[wsl2]
+
+# --- WSL ---
+safeMode=false
+debugConsole=true
+vmIdleTimeout=60000
+
+# --- GUI ---
+guiApplications=true
+
+# --- SYSTEM ---
+processors=12
+memory=8GB
+swap=10GB
+
+# https://github.com/microsoft/WSL/releases/tag/1.1.7
+# pageReporting=true
+
+# --- KERNEL ---
+kernelCommandLine=intel_iommu=on iommu=pt kvm.ignore_msrs=1 kvm-intel.nested=1 kvm-intel.ept=1 kvm-intel.emulate_invalid_guest_state=0 kvm-intel.enable_shadow_vmcs=1 kvm-intel.enable_apicv=1
+nestedVirtualization=true
+
+# --- NETWORK ---
+#networkingMode=bridged
+#vmSwitch=WiFi - External Virtual Switch
+#vmSwitch=Ethernet - External Virtual Switch
+ipv6=true
+#dhcp=true
