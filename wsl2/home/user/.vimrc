@@ -48,7 +48,7 @@ set tabstop=4
 set shiftwidth=4
 
 " https://github.com/microsoft/WSL/issues/4440
-let s:clip = '/HOSTDIR/c/Windows/System32/clip.exe'
+let s:clip = '/mnt/c/Windows/System32/clip.exe'
 if executable(s:clip)
     augroup WSLYank
     autocmd!
