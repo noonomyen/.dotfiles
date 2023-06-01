@@ -16,5 +16,7 @@ Set-PSReadlineKeyHandler -Key "Tab" -Function MenuComplete
 Set-PSReadlineKeyHandler -Key "UpArrow" -Function HistorySearchBackward
 Set-PSReadlineKeyHandler -Key "DownArrow" -Function HistorySearchForward
 
+# $env:POSH_THEMES_PATH\agnoster.omp.json
+# edit block->segments type:path | change properties->style from 'agnoster' to 'full'
 oh-my-posh init pwsh --config "C:\\Users\\noonomyen\\.ompsh\\agnoster-mod.omp.json" | Invoke-Expression
 
