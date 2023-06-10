@@ -21,8 +21,9 @@ kernelCommandLine=intel_iommu=on iommu=pt kvm.ignore_msrs=1 kvm-intel.nested=1 k
 nestedVirtualization=true
 
 # --- NETWORK ---
+#localhostForwarding=false
 #networkingMode=bridged
-#vmSwitch=WiFi - External Virtual Switch
-#vmSwitch=Ethernet - External Virtual Switch
-ipv6=true
+#vmSwitch=WiFi Virtual Switch
+#vmSwitch=Ethernet Virtual Switch
+#ipv6=true
 #dhcp=true
