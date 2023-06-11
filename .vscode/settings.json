@@ -3,4 +3,5 @@
     "prettier.tabWidth": 4,
     "editor.insertSpaces": true,
     "prettier.endOfLine": "lf",
+    "files.eol": "\n",
 }
