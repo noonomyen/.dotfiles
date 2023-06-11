@@ -8,7 +8,7 @@ if [[ $# -eq 0 ]]; then
 elif [[ $# -eq 1 && $1 == "clear" ]]; then
     rm -rf $PWD_TMP
 elif [[ $# -eq 2 && $1 == "login" ]]; then
-    DEFALLT_SHELL=$(awk -F: -v USER=$2 '$1 == USER {print $7}' /etc/passwd) 
+    DEFALLT_SHELL=$(awk -F: -v USER=$2 '$1 == USER {print $7}' /etc/passwd)
     if [ -f $PWD_TMP ]; then
         TARGET=$(cat $PWD_TMP)
         cd $TARGET
@@ -16,7 +16,7 @@ elif [[ $# -eq 2 && $1 == "login" ]]; then
         exec $DEFALLT_SHELL
     else
         echo "directory not found"
-        HOME_DIR=$(awk -F: -v USER=$2 '$1 == USER {print $6}' /etc/passwd) 
+        HOME_DIR=$(awk -F: -v USER=$2 '$1 == USER {print $6}' /etc/passwd)
         cd $HOME_DIR
         exec $DEFALLT_SHELL
     fi
