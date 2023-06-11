@@ -26,11 +26,6 @@ set number
 set smartindent
 set title
 
-" https://www.cyberciti.biz/faq/vim-vi-text-editor-save-file-without-root-permission
-command W :execute ':silent w !sudo tee % > /dev/null' | :edit!
-
-command Wq :execute ':silent w !sudo tee % > /dev/null' | :q
-
 " https://vim.fandom.com/wiki/Disable_beeping
 set noerrorbells visualbell t_vb=
 if has('autocmd')
@@ -135,3 +130,6 @@ set backspace=indent,eol,start
 
 " https://vi.stackexchange.com/a/4655
 set belloff=all
+
+command! -nargs=0 Dos :set fileformat=dos
+command! -nargs=0 Unix :set fileformat=unix
