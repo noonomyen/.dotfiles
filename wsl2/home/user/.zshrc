@@ -12,7 +12,9 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
+# stty -a
 bindkey '^H' backward-kill-word
+# bindkey '^?' backward-kill-word
 
 unsetopt BEEP
 
