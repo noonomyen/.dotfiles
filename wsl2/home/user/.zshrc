@@ -20,4 +20,3 @@ unsetopt BEEP
 
 setopt KSH_GLOB
 setopt SHARE_HISTORY
-

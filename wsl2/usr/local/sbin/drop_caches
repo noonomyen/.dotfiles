@@ -8,4 +8,3 @@ else
     echo "2 - dentries and inodes"
     echo "3 - pagecache, dentries, and inodes"
 fi
-
