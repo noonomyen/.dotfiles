@@ -1,10 +1,5 @@
-source ~\.dotfiles\universal\vim\.vimrc
+let S_ENV = ''
+let OSF = ''
+let OS = 'windows'
 
-" https://github.com/microsoft/WSL/issues/4440
-let s:clip = 'C:\Windows\System32\clip.exe'
-if executable(s:clip)
-    augroup WSLYank
-    autocmd!
-    autocmd TextYankPost * if v:event.operator ==# 'y' | call system(s:clip, @0) | endif
-    augroup END
-endif
+source ~\.dotfiles\universal\vim\.vimrc
