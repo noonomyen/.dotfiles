@@ -25,6 +25,13 @@ else
         Plugin 'mg979/vim-visual-multi'
         Plugin 'editorconfig/editorconfig-vim'
         Plugin 'wakatime/vim-wakatime'
+        Plugin 'junegunn/fzf',
+        Plugin 'junegunn/fzf.vim',
+        Plugin 'dense-analysis/ale'
+        Plugin 'MarcWeber/vim-addon-mw-utils'
+        Plugin 'tomtom/tlib_vim'
+        Plugin 'garbas/vim-snipmate'
+        Plugin 'honza/vim-snippets'
     call vundle#end()
     filetype plugin indent on
 
@@ -36,6 +43,9 @@ else
     set title
 
     let NERDTreeShowHidden=1
+
+    " https://www.wiserfirst.com/blog/vim-tip-snipmate-legacy-parser-warning
+    let g:snipMate = { 'snippet_version' : 1 }
 
     " https://www.cyberciti.biz/faq/vim-vi-text-editor-save-file-without-root-permission
     if OSF == 'linux'
