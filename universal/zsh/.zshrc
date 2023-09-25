@@ -15,8 +15,6 @@ source $ZSH/oh-my-zsh.sh
 # stty -a
 if [[ $REMOTE_FROM == "windows" ]]; then
     bindkey '^H' backward-kill-word
-elif [[ $REMOTE_FROM == "linux" || $REMOTE_FROM == "android" ]]; then
-    bindkey '^?' backward-kill-word
 fi
 
 unsetopt BEEP
