@@ -1,22 +1,5 @@
-export ZSH="$HOME/.oh-my-zsh"
-export COLORTERM=truecolor
+if [ -z $REMOTE_FROM ]; then
+    bindkey '^H' backward-kill-word
+fi
 
-ZSH_THEME="agnoster"
-
-plugins=(
-    git
-    zsh-autosuggestions
-    zsh-syntax-highlighting
-    docker
-)
-
-source $ZSH/oh-my-zsh.sh
-
-# stty -a
-bindkey '^H' backward-kill-word
-# bindkey '^?' backward-kill-word
-
-unsetopt BEEP
-
-setopt KSH_GLOB
-setopt SHARE_HISTORY
+source ~/.dotfiles/universal/zsh/.zshrc

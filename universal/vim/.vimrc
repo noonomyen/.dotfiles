@@ -35,6 +35,8 @@ else
     set smartindent
     set title
 
+    let NERDTreeShowHidden=1
+
     " https://www.cyberciti.biz/faq/vim-vi-text-editor-save-file-without-root-permission
     if OSF == 'linux'
         command W :execute ':silent w !sudo tee % > /dev/null' | :edit!
