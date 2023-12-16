@@ -1,9 +1,8 @@
 [wsl2]
-
 # --- WSL ---
 safeMode=false
 debugConsole=true
-vmIdleTimeout=60000
+vmIdleTimeout=-1
 
 # --- GUI ---
 guiApplications=true
@@ -12,7 +11,6 @@ guiApplications=true
 processors=12
 memory=8GB
 swap=10GB
-
 # https://github.com/microsoft/WSL/releases/tag/1.1.7
 # pageReporting=true
 
@@ -21,9 +19,24 @@ kernelCommandLine=intel_iommu=on iommu=pt kvm.ignore_msrs=1 kvm-intel.nested=1 k
 nestedVirtualization=true
 
 # --- NETWORK ---
+networkingMode=mirrored
+firewall=true
+dnsTunneling=true
+autoProxy=false
 #localhostForwarding=false
 #networkingMode=bridged
 #vmSwitch=WiFi Virtual Switch
 #vmSwitch=Ethernet Virtual Switch
 #ipv6=true
 #dhcp=true
+
+# --- EXPERIMENTAL ---
+[experimental]
+useWindowsDnsCache=true
+bestEffortDnsParsing=false
+#initialAutoProxyTimeout=1000
+#ignoredPorts=
+hostAddressLoopback=true
+autoMemoryReclaim=dropcache
+sparseVhd=true
+
