@@ -1,3 +1,5 @@
+set shell=/usr/bin/bash
+
 " https://github.com/VundleVim/Vundle.vim
 set encoding=utf-8
 set nocompatible
@@ -43,7 +45,7 @@ let g:snipMate = { 'snippet_version' : 1 }
 command W :execute ':silent w !sudo tee % > /dev/null' | :edit!
 
 " https://github.com/microsoft/WSL/issues/4440
-let WindowsClipboardCommandExe = 'C:\Windows\System32\clip.exe'
+let WindowsClipboardCommandExe = '/c/Windows/System32/clip.exe'
 
 if executable(WindowsClipboardCommandExe)
     augroup WSLYank
@@ -119,6 +121,11 @@ let g:VM_maps["Add Cursor Down"] = '<M-Down>'
 let g:VM_maps["Add Cursor Up"] = '<M-Up>'
 let g:VM_maps['Find Under'] = '<>'
 let g:VM_maps['Find Subword Under'] = '<>'
+
+inoremap <C-Up> <Esc>4ki
+nnoremap <C-Up> <Esc>4k
+inoremap <C-Down> <Esc>4ji
+nnoremap <C-Down> <Esc>4j
 
 " https://superuser.com/a/634327
 let &t_ti.="\e[1 q"

@@ -1,7 +1,6 @@
 export ZSH="$HOME/.oh-my-zsh"
-export COLORTERM=truecolor
 
-ZSH_THEME="agnoster"
+ZSH_THEME="agnoster-custom"
 
 plugins=(
     git
@@ -12,10 +11,7 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
-# stty -a
-if [[ $REMOTE_FROM == "windows" ]]; then
-    bindkey '^H' backward-kill-word
-fi
+bindkey '^H' backward-kill-word
 
 unsetopt BEEP
 

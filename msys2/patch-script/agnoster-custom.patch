@@ -1,0 +1,19 @@
+--- .oh-my-zsh/themes/agnoster.zsh-theme        2023-12-29 14:36:18.035455500 +0700
++++ /home/noonomyen/.oh-my-zsh/custom/themes/agnoster-custom.zsh-theme  2023-12-29 19:53:58.709786200 +0700
+@@ -254,9 +254,16 @@
+   esac
+ }
+
++prompt_msystem_env() {
++  if [[ ! -z "$MSYSTEM" ]]; then
++    prompt_segment blue black "[${MSYSTEM}]"
++  fi
++}
++
+ ## Main prompt
+ build_prompt() {
+   RETVAL=$?
++  prompt_msystem_env
+   prompt_status
+   prompt_virtualenv
+   prompt_aws
