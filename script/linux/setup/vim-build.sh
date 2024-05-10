@@ -7,10 +7,10 @@ sudo apt remove -y vim vim-runtime gvim vim-tiny vim-common vim-gui-common
 sudo apt-get install -y libncurses5-dev libgtk2.0-dev libatk1.0-dev \
                         libcairo2-dev libx11-dev libxpm-dev libxt-dev ruby-dev
 
-sudo wget https://github.com/vim/vim/archive/refs/tags/v9.0.2116.tar.gz -O v9.0.2116.tar.gz
+sudo wget https://github.com/vim/vim/releases/tag/v9.1.0404.tar.gz -O v9.1.0404.tar.gz
 
-sudo tar -xf v9.0.2116.tar.gz
-cd vim-9.0.2116
+sudo tar -xf v9.1.0404.tar.gz
+cd vim-9.1.0404
 
 sudo ./configure --enable-cscope \
             --enable-fontset \
