@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+
+wget -r -N -nH --cut-dirs=0 $@
