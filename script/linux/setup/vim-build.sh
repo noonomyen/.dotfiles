@@ -45,9 +45,9 @@ sudo bash ./configure \
 sudo make -j $(nproc)
 sudo make install
 
-sudo update-alternatives --install /usr/bin/editor editor /opt/vim/bin/vim 1
+sudo update-alternatives --install /usr/bin/editor editor /opt/vim/bin/vim 30
 sudo update-alternatives --set editor /opt/vim/bin/vim
-sudo update-alternatives --install /usr/bin/vi vi /opt/vim/bin/vim 1
+sudo update-alternatives --install /usr/bin/vi vi /opt/vim/bin/vim 30
 sudo update-alternatives --set vi /opt/vim/bin/vim
 
 sudo ln -s /opt/vim/bin/* /usr/local/bin
