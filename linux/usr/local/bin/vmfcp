@@ -1,0 +1,24 @@
+#!/usr/bin/bash
+
+# VMware
+
+CLIPBOARD_DATA=$(xsel --clipboard)
+
+if [[ "$CLIPBOARD_DATA" =~ file://(.*) ]]; then
+    FILE_PATH=${BASH_REMATCH[1]}
+    FILE_NAME=$(basename "$FILE_PATH")
+
+    if [ ! -f "$FILE_PATH" ]; then
+        echo "Not found: $FILE_PATH"
+        exit 1
+    fi
+
+    if [ -f "./$FILE_NAME" ]; then
+        echo "File already exists."
+    else
+        rsync --human-readable --progress "$FILE_PATH" .
+        echo "Copied: $FILE_NAME"
+    fi
+else
+    echo "Error parsing clipboard."
+fi
