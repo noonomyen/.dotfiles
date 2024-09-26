@@ -1,7 +1,7 @@
 [wsl2]
 # --- WSL ---
 safeMode=false
-debugConsole=true
+debugConsole=false
 vmIdleTimeout=-1
 
 # --- GUI ---
@@ -10,32 +10,31 @@ guiApplications=true
 # --- SYSTEM ---
 processors=12
 memory=8GB
-swap=10GB
-# https://github.com/microsoft/WSL/releases/tag/1.1.7
-# pageReporting=true
+swap=4GB
+#swapFile=%USERPROFILE%\AppData\Local\Temp\swap.vhdx
 
 # --- KERNEL ---
-kernelCommandLine=intel_iommu=on iommu=pt kvm.ignore_msrs=1 kvm-intel.nested=1 kvm-intel.ept=1 kvm-intel.emulate_invalid_guest_state=0 kvm-intel.enable_shadow_vmcs=1 kvm-intel.enable_apicv=1
+#kernel=
+#kernelCommandLine=
 nestedVirtualization=true
+#pageReporting=true
 
 # --- NETWORK ---
-networkingMode=mirrored
+localhostForwarding=true
+dnsProxy=true
 firewall=true
 dnsTunneling=true
-autoProxy=false
-#localhostForwarding=false
-#networkingMode=bridged
-#vmSwitch=WiFi Virtual Switch
-#vmSwitch=Ethernet Virtual Switch
-#ipv6=true
-#dhcp=true
+autoProxy=true
+
+# --- Virtual Disk ---
+defaultVhdSize=274877906944
 
 # --- EXPERIMENTAL ---
 [experimental]
-useWindowsDnsCache=true
-bestEffortDnsParsing=false
-#initialAutoProxyTimeout=1000
-#ignoredPorts=
-hostAddressLoopback=true
-autoMemoryReclaim=dropcache
+autoMemoryReclaim=gradual
 sparseVhd=true
+#bestEffortDnsParsing=false
+#dnsTunnelingIpAddress=10.255.255.254
+#initialAutoProxyTimeout=100
+#ignoredPorts=null
+hostAddressLoopback=true
