@@ -1,11 +1,3 @@
-source ~/.zplug/init.zsh
-
-zplug "chitoku-k/fzf-zsh-completions"
-
-zplug load
-
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
 export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME="agnoster"
@@ -21,9 +13,9 @@ plugins=(
     jsontools
 
     shellfirm
-    # you-should-use
     zsh-autosuggestions
     zsh-syntax-highlighting
+    zsh-shift-select
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -48,16 +40,11 @@ zsh_unhide_path() {
     }
 }
 
+alias ls=eza
+
 # bun completions
-# [ -s "/home/user/.bun/_bun" ] && source "/home/user/.bun/_bun"
+[ -s "/home/noonomyen/.bun/_bun" ] && source "/home/noonomyen/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-
-# https://github.com/nvbn/thefuck
-# eval $(thefuck --alias --enable-experimental-instant-mode)
-
-# https://github.com/junegunn/fzf
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
