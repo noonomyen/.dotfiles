@@ -4,4 +4,5 @@
     "editor.insertSpaces": true,
     "prettier.endOfLine": "lf",
     "files.eol": "\n",
+    "python.analysis.typeCheckingMode": "basic",
 }
