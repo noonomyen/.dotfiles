@@ -88,7 +88,7 @@ if __name__ == "__main__":
         run(imports=[_.split("->") for _ in argv[1].split(",")] if argv[1] != "" else [], code=argv[2])
     elif argc == 4:
         deque(map(features.__call__, argv[1].split(",")), maxlen=0)
-        run(imports=[_.split("->") for _ in argv[1].split(",")] if argv[2] != "" else [], code=argv[3])
+        run(imports=[_.split("->") for _ in argv[2].split(",")] if argv[2] != "" else [], code=argv[3])
     else:
         print("Python program passed in as string")
         print("  Usage")
