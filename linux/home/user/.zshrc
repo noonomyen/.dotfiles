@@ -11,6 +11,7 @@ plugins=(
     copybuffer
     dirhistory
     jsontools
+    zsh-history-substring-search
 
     shellfirm
     zsh-autosuggestions
@@ -41,6 +42,9 @@ zsh_unhide_path() {
 }
 
 alias ls=eza
+
+bindkey -M emacs '^[[1;5A' history-substring-search-up
+bindkey -M emacs '^[[1;5B' history-substring-search-down
 
 # bun completions
 [ -s "/home/noonomyen/.bun/_bun" ] && source "/home/noonomyen/.bun/_bun"

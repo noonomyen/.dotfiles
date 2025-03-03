@@ -16,14 +16,29 @@ class _drain:
         deque(obj, maxlen=0)
     __rmatmul__ = __call__
 
+class _drainc:
+    @staticmethod
+    def __call__(obj: Iterable) -> int:
+        size = 0
+        for _ in obj: size += 1
+        return size
+    __rmatmul__ = __call__
+
 class _lapply:
     @staticmethod
     def __call__(list_: list, func: Callable) -> None:
         list_[:] = map(func, list_)
     __rmatmul__ = __call__
 
-locals_["p"] = print
+class _p:
+    @staticmethod
+    def __call__(obj: Any) -> None:
+        print(obj)
+    __rmatmul__ = __call__
+
+locals_["p"] = _p()
 locals_["drain"] = _drain()
+locals_["drainc"] = _drainc()
 locals_["lapply"] = _lapply()
 
 def run(imports: list[list[str]], code: str):
