@@ -12,6 +12,7 @@ plugins=(
     dirhistory
     jsontools
     zsh-history-substring-search
+    fzf
 
     shellfirm
     zsh-autosuggestions
@@ -41,14 +42,17 @@ zsh_unhide_path() {
     }
 }
 
-alias ls=eza
-
 bindkey -M emacs '^[[1;5A' history-substring-search-up
 bindkey -M emacs '^[[1;5B' history-substring-search-down
 
-# bun completions
 [ -s "/home/noonomyen/.bun/_bun" ] && source "/home/noonomyen/.bun/_bun"
 
-# bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+eval "$(zoxide init zsh)"
+alias cd=z
+
+alias l="exa -lah --group-directories-first --git --icons --time-style=long-iso --color=always"
+alias ls="exa --group-directories-first --git --icons --time-style=long-iso --color=always"
+
