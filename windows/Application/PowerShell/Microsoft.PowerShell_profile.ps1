@@ -1,3 +1,7 @@
+if ($PWD.Path -eq "C:\Windows\System32") {
+    Set-Location $env:USERPROFILE
+}
+
 # winget install JanDeDobbeleer.OhMyPosh -s winget
 # Install-Module -Name PowerShellGet -Force
 # PowerShellGet\Install-Module posh-git -Force
@@ -18,4 +22,5 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+w' -Function BackwardKillWord
 
 # $env:POSH_THEMES_PATH\agnoster.omp.json
 # edit block->segments type:path | change properties->style from 'agnoster' to 'full'
-oh-my-posh init pwsh --config "C:\\Users\\noonomyen\\.ompsh\\agnoster-mod.omp.json" | Invoke-Expression
+oh-my-posh init pwsh --config "C:\\Users\\nnyno\\.ompsh\\mod.agnoster.omp.json" | Invoke-Expression
+

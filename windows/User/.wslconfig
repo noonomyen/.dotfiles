@@ -1,40 +1,32 @@
 [wsl2]
-# --- WSL ---
-safeMode=false
-debugConsole=false
-vmIdleTimeout=-1
-
-# --- GUI ---
-guiApplications=true
-
-# --- SYSTEM ---
+# kernel=
+# kernelModules=
+memory=16GB
 processors=12
-memory=8GB
-swap=4GB
-#swapFile=%USERPROFILE%\AppData\Local\Temp\swap.vhdx
-
-# --- KERNEL ---
-#kernel=
-#kernelCommandLine=
+localhostForwarding=false
+# kernelCommandLine=
+safeMode=false
+swap=8GB
+# swapFile=%Temp%\swap.vhdx
+## pageReporting=true
+guiApplications=true
+debugConsole=false
+maxCrashDumpCount=10
 nestedVirtualization=true
-#pageReporting=true
-
-# --- NETWORK ---
-localhostForwarding=true
+vmIdleTimeout=-1
 dnsProxy=true
+networkingMode=NAT
 firewall=true
 dnsTunneling=true
 autoProxy=true
+# defaultVhdSize=1099511627776
 
-# --- Virtual Disk ---
-defaultVhdSize=274877906944
-
-# --- EXPERIMENTAL ---
 [experimental]
 autoMemoryReclaim=gradual
-sparseVhd=true
-#bestEffortDnsParsing=false
-#dnsTunnelingIpAddress=10.255.255.254
-#initialAutoProxyTimeout=100
-#ignoredPorts=null
-hostAddressLoopback=true
+sparseVhd=false
+bestEffortDnsParsing=false
+dnsTunnelingIpAddress=
+initialAutoProxyTimeout=1000
+# ignoredPorts=Null
+hostAddressLoopback=false
+

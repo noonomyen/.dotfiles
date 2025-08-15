@@ -1,3 +1,0 @@
-[submodule "windows/Application/Windows-Terminal/catppuccin-theme"]
-	path = windows/Application/Windows-Terminal/catppuccin-theme
-	url = https://github.com/catppuccin/windows-terminal

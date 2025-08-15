@@ -45,14 +45,13 @@ let g:snipMate = { 'snippet_version' : 1 }
 command W :execute ':silent w !sudo tee % > /dev/null' | :edit!
 
 " https://github.com/microsoft/WSL/issues/4440
-let WindowsClipboardCommandExe = '/c/Windows/System32/clip.exe'
-
-if executable(WindowsClipboardCommandExe)
-    augroup WSLYank
-    autocmd!
-    autocmd TextYankPost * if v:event.operator ==# 'y' | call system(WindowsClipboardCommandExe, @0) | endif
-    augroup END
-endif
+augroup WSLYank
+autocmd!
+" WSL
+" autocmd TextYankPost * if v:event.operator ==# 'y' | call system('/mnt/c/Windows/System32/clip.exe', @0) | endif
+" xsel
+autocmd TextYankPost * if v:event.operator ==# 'y' | call system('/usr/bin/xsel --input --clipboard', @0) | endif
+augroup END
 
 " https://vim.fandom.com/wiki/Disable_beeping
 set noerrorbells visualbell t_vb=
@@ -101,6 +100,7 @@ noremap! <C-BS> <C-w>
 inoremap <C-w> <C-\><C-o>dB
 inoremap <C-BS> <C-\><C-o>db
 noremap! <C-h> <C-w>
+" noremap! <C-?> <C-w>
 
 " https://vi.stackexchange.com/a/24396
 let g:vim_json_syntax_conceal = 0
