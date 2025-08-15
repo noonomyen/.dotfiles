@@ -53,8 +53,7 @@ nnoremap <silent> \\ :nohlsearch<Bar>let @/ = ""<CR>
 augroup ClipYank
     autocmd!
     autocmd TextYankPost * if v:event.operator ==# 'y' |
-        \   " /usr/bin/xsel --input --clipboard
-        \   call system('/mnt/c/Windows/System32/clip.exe', @0) |
+        \   call system('C:\Windows\System32\clip.exe', @0) |
         \ endif
 augroup END
 
