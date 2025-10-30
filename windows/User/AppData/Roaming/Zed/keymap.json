@@ -1,0 +1,43 @@
+// Zed keymap
+// OS: Windows
+// Base keymap: VSCode
+// Vim mode: True
+
+[
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-up": ["workspace::SendKeystrokes", "up up up up"],
+      "ctrl-down": ["workspace::SendKeystrokes", "down down down down"],
+      "ctrl-alt-left": ["workspace::SendKeystrokes", "home"],
+      "ctrl-alt-right": ["workspace::SendKeystrokes", "end"],
+      "ctrl-alt-up": "editor::AddSelectionAbove",
+      "ctrl-alt-down": "editor::AddSelectionBelow",
+      "ctrl-shift-c": "editor::Copy",
+      "ctrl-shift-p": "editor::Paste",
+      "ctrl-d": "editor::SelectNext",
+      "ctrl-z": "editor::Undo",
+      "ctrl-y": "editor::Redo",
+      "alt-up": "editor::HalfPageUp",
+      "alt-down": "editor::HalfPageDown"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == visual",
+    "bindings": {
+      "ctrl-shift-up": ["workspace::SendKeystrokes", "up up up up"],
+      "ctrl-shift-down": ["workspace::SendKeystrokes", "down down down down"],
+      "ctrl-shift-alt-left": ["workspace::SendKeystrokes", "home"],
+      "ctrl-shift-alt-right": ["workspace::SendKeystrokes", "end"]
+    }
+  },
+  {
+    "context": "Editor && vim_mode != visual",
+    "bindings": {
+      "ctrl-shift-up": ["workspace::SendKeystrokes", "escape v up up up up"],
+      "ctrl-shift-down": ["workspace::SendKeystrokes", "escape v down down down down"],
+      "ctrl-shift-alt-left": ["workspace::SendKeystrokes", "escape v home"],
+      "ctrl-shift-alt-right": ["workspace::SendKeystrokes", "escape v end"]
+    }
+  }
+]
