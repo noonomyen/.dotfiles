@@ -52,9 +52,5 @@ nnoremap <silent> \\ :nohlsearch<Bar>let @/ = ""<CR>
 " Send only yank (not delete) to clipboard
 augroup ClipYank
     autocmd!
-    autocmd TextYankPost * if v:event.operator ==# 'y' |
-        \   " /usr/bin/xsel --input --clipboard
-        \   call system('/mnt/c/Windows/System32/clip.exe', @0) |
-        \ endif
+    autocmd TextYankPost * if v:event.operator ==# 'y' | call system('/mnt/c/Windows/System32/clip.exe', @0) | endif
 augroup END
-
