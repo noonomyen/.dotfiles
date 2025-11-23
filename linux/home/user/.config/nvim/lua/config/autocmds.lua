@@ -17,9 +17,10 @@ vim.api.nvim_create_autocmd("TextYankPost", {
                 local yanked = vim.fn.getreg("0") -- last yanked text
                 if #yanked > 0 then
                     -- Clipboard input path
-                    CBI_PATH = "/mnt/c/Windows/System32/clip.exe"
-                    -- CB_PATH="/usr/bin/xsel --input --clipboard"
-                    vim.fn.system({ CBI_PATH }, yanked)
+                    -- CB_PATH = "/mnt/c/Windows/System32/clip.exe"
+                    -- CB_PATH = "/usr/bin/xsel --input --clipboard"
+                    CB_PATH = "/usr/bin/wl-copy"
+                    vim.fn.system({ CB_PATH }, yanked)
                 end
             end)
         end
