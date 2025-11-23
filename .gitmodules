@@ -1,0 +1,3 @@
+[submodule "dotfiles-end4hyprland"]
+	path = dotfiles-end4hyprland
+	url = https://github.com/noonomyen/.dotfiles-end4hyprland
