@@ -1,3 +1,6 @@
 [submodule "dotfiles-end4hyprland"]
 	path = dotfiles-end4hyprland
 	url = https://github.com/noonomyen/.dotfiles-end4hyprland
+[submodule "linux/home/user/.config/kitty/kitty-kitten-search"]
+	path = linux/home/user/.config/kitty/kitty-kitten-search
+	url = https://github.com/trygveaa/kitty-kitten-search
