@@ -54,6 +54,6 @@ zsh_unhide_path() {
 eval "$(zoxide init zsh)"
 
 alias cd=z
-alias l="exa -alghHiMnOSmU --group-directories-first --git --icons --time-style=long-iso --color=always"
-alias ls="exa --group-directories-first --git --icons --time-style=long-iso --color=always"
+alias l="eza -alghHiMnOSmU --group-directories-first --git --icons --time-style=long-iso --color=always"
+alias ls="eza --group-directories-first --git --icons --time-style=long-iso --color=always"
 
