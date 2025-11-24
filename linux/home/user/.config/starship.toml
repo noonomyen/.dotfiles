@@ -1,0 +1,99 @@
+"$schema" = "https://starship.rs/config-schema.json"
+
+add_newline = false
+
+format = """
+$status\
+$jobs\
+$username\
+$hostname\
+[](fg:color_bg1 bg:color_blue)\
+$directory\
+[](fg:color_blue bg:color_green)\
+$git_branch\
+$git_commit\
+$git_status\
+[](fg:color_green bg:none) \
+"""
+
+palette = "onedark_pro"
+
+# OneDark-Pro palette (from your kitty theme)
+[palettes.onedark_pro]
+color_fg0    = "#ABB2BF"
+color_bg0    = "#282C34"
+color_bg1    = "#3F4451"
+color_red    = "#E06C75"
+color_green  = "#98C379"
+color_yellow = "#D19A66"
+color_blue   = "#61AFEF"
+color_purple = "#C678DD"
+color_cyan   = "#56B6C2"
+color_white  = "#D7DAE0"
+
+[status]
+disabled = false
+success_symbol = ""
+format = "(fg:color_red)[ $status ](fg:color_fg0 bg:color_red)[](fg:color_red bg:color_bg1)"
+style = "fg:color_fg0 bg:color_red"
+
+[jobs]
+symbol = ""
+format = "[ $symbol ](fg:color_fg0 bg:color_bg1)"
+style = "fg:color_fg0 bg:color_bg1"
+number_threshold = 1
+symbol_threshold = 1
+
+[username]
+show_always = true
+format = "[ $user](fg:color_fg0 bg:color_bg1)"
+style_user = "fg:color_fg0 bg:color_bg1"
+style_root = "fg:color_fg0 bg:color_bg1"
+
+[hostname]
+ssh_only = false
+format = "[@$hostname ](fg:color_fg0 bg:color_bg1)"
+style = "fg:color_fg0 bg:color_bg1"
+
+[directory]
+home_symbol = "~"
+truncation_length = 0
+truncate_to_repo = false
+read_only = " "
+read_only_style = "fg:color_fg0 bg:color_blue"
+format = "[ $path$read_only ](fg:color_bg0 bg:color_blue)"
+style = "fg:color_bg0 bg:color_blue"
+
+[git_branch]
+symbol = ""
+only_attached = true
+format = "[ $symbol $branch ](fg:color_bg0 bg:color_green)"
+style = "fg:color_bg0 bg:color_yellow"
+
+[git_commit]
+only_detached = true
+commit_hash_length = 7
+tag_disabled = false
+tag_symbol = " "
+format = "[( $tag)( ↳ $hash )](fg:color_bg0 bg:color_green)"
+style = "fg:color_bg0 bg:color_yellow"
+
+[git_state]
+disabled = true
+
+[git_status]
+disabled = false
+format = "($all_status[± ](fg:color_bg0 bg:color_green))"
+conflicted  = "\u200b"
+stashed     = "\u200b"
+deleted     = "\u200b"
+renamed     = "\u200b"
+modified    = "\u200b"
+typechanged = "\u200b"
+staged      = "\u200b"
+untracked   = "\u200b"
+ahead      = ""
+behind     = ""
+diverged   = ""
+up_to_date = ""
+
