@@ -1,0 +1,120 @@
+[
+    {
+        "key": "ctrl+up",
+        "command": "cursorMove",
+        "args": {
+            "to": "up",
+            "by": "line",
+            "value": 4
+        },
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+down",
+        "command": "cursorMove",
+        "args": {
+            "to": "down",
+            "by": "line",
+            "value": 4
+        },
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+left",
+        "command": "cursorMove",
+        "args": {
+            "to": "wrappedLineStart"
+        },
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+right",
+        "command": "cursorMove",
+        "args": {
+            "to": "wrappedLineEnd"
+        },
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+up",
+        "command": "editor.action.insertCursorAbove",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+alt+down",
+        "command": "editor.action.insertCursorBelow",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+c",
+        "command": "editor.action.clipboardCopyAction",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+p",
+        "command": "editor.action.clipboardPasteAction",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "alt+up",
+        "command": "editorScroll",
+        "args": {
+            "to": "up",
+            "by": "halfPage",
+            "value": 1,
+            "revealCursor": true
+        },
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "alt+down",
+        "command": "editorScroll",
+        "args": {
+            "to": "down",
+            "by": "halfPage",
+            "value": 1,
+            "revealCursor": true
+        },
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+up",
+        "command": "cursorMove",
+        "args": {
+            "to": "up",
+            "by": "line",
+            "value": 4,
+            "select": true
+        },
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+down",
+        "command": "cursorMove",
+        "args": {
+            "to": "down",
+            "by": "line",
+            "value": 4,
+            "select": true
+        },
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+alt+left",
+        "command": "cursorMove",
+        "args": {
+            "to": "wrappedLineStart",
+            "select": true
+        },
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+shift+alt+right",
+        "command": "cursorMove",
+        "args": {
+            "to": "wrappedLineEnd",
+            "select": true
+        },
+        "when": "editorTextFocus"
+    }
+]
