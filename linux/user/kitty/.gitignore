@@ -1,0 +1,11 @@
+# Ignore everything by default
+*
+
+# Do not ignore directories so Git can scan them
+!*/
+
+# Whitelist files we want to track
+!.gitignore
+!kitty.conf
+!kitty-kitten-search
+!theme-catppuccin
