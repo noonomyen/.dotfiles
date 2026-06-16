@@ -6,7 +6,7 @@ format = """
 $sudo\
 $username\
 $hostname\
-[](fg:color_terminal_bg bg:color_blue)\
+[](fg:color_blue bg:none inverted)\
 $directory\
 ${custom.dir_to_none_transition}\
 $git_branch\
@@ -33,7 +33,6 @@ color_blue        = "#61AFEF"
 color_purple      = "#C678DD"
 color_cyan        = "#56B6C2"
 color_white       = "#D7DAE0"
-color_terminal_bg = "#1e1e2e"
 
 [status]
 disabled = false
