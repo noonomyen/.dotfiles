@@ -1,0 +1,145 @@
+"$schema" = "https://starship.rs/config-schema.json"
+
+add_newline = false
+
+format = """
+$sudo\
+$username\
+$hostname\
+[](fg:color_bg1 bg:color_blue)\
+$directory\
+${custom.dir_to_none_transition}\
+$git_branch\
+$git_commit\
+$git_status\
+$git_state\
+$git_metrics\
+${custom.git_to_none_transition}\
+"""
+
+right_format = """$status$jobs$shlvl$cmd_duration"""
+
+palette = "onedark_pro"
+
+# OneDark-Pro palette (from your kitty theme)
+[palettes.onedark_pro]
+color_fg0    = "#ABB2BF"
+color_bg0    = "#282C34"
+color_bg1    = "#3F4451"
+color_red    = "#E06C75"
+color_green  = "#98C379"
+color_yellow = "#D19A66"
+color_blue   = "#61AFEF"
+color_purple = "#C678DD"
+color_cyan   = "#56B6C2"
+color_white  = "#D7DAE0"
+
+[status]
+disabled = false
+success_symbol = ""
+format = "[ 󰅚 $status ](fg:color_red)"
+
+[jobs]
+symbol = ""
+format = "[ $symbol $number ](fg:color_cyan)"
+number_threshold = 1
+symbol_threshold = 1
+
+[username]
+show_always = true
+format = "[ $user](fg:color_fg0 bg:color_bg1)"
+style_user = "fg:color_fg0 bg:color_bg1"
+style_root = "fg:color_fg0 bg:color_bg1"
+
+[hostname]
+ssh_only = false
+format = "[@$hostname ](fg:color_fg0 bg:color_bg1)"
+style = "fg:color_fg0 bg:color_bg1"
+
+[directory]
+home_symbol = "~"
+truncation_length = 0
+truncate_to_repo = false
+read_only = " "
+read_only_style = "fg:color_fg0 bg:color_blue"
+format = "[ $path$read_only ](fg:color_bg0 bg:color_blue)"
+style = "fg:color_bg0 bg:color_blue"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+"Desktop" = " "
+
+[git_branch]
+symbol = ""
+only_attached = true
+format = "[](fg:color_blue bg:color_green)[ $symbol $branch ](fg:color_bg0 bg:color_green)"
+style = "fg:color_bg0 bg:color_yellow"
+
+[git_commit]
+only_detached = true
+commit_hash_length = 7
+tag_disabled = false
+tag_symbol = " "
+format = "[](fg:color_blue bg:color_green)[( $tag)( ↳ $hash )](fg:color_bg0 bg:color_green)"
+style = "fg:color_bg0 bg:color_yellow"
+
+[git_state]
+disabled = false
+format = "[($state( $progress_current/$progress_total)) ](fg:color_bg0 bg:color_green)"
+rebase = " REBASING"
+merge = " MERGING"
+bisect = " BISECTING"
+cherry_pick = " CHERRY-PICKING"
+revert = " REVERTING"
+am = " AM"
+am_or_rebase = "/ AM/REBASE"
+
+[git_status]
+disabled = false
+format = "[$all_status](fg:color_bg0 bg:color_green)"
+conflicted  = "[ ](fg:color_red bg:color_green)"
+stashed     = "[ ](fg:color_bg0 bg:color_green)"
+deleted     = "[ ](fg:color_red bg:color_green)"
+renamed     = "[󰑕 ](fg:color_bg0 bg:color_green)"
+modified    = "[ ](fg:color_bg0 bg:color_green)"
+typechanged = "[󰜱 ](fg:color_bg0 bg:color_green)"
+staged      = "[ ](fg:color_bg0 bg:color_green)"
+untracked   = "[ ](fg:color_bg0 bg:color_green)"
+ahead       = "[⇡ ](fg:color_bg0 bg:color_green)"
+behind      = "[⇣ ](fg:color_bg0 bg:color_green)"
+diverged    = "[⇕ ](fg:color_red bg:color_green)"
+up_to_date  = "[ ](fg:color_bg0 bg:color_green)"
+
+[custom.dir_to_none_transition]
+command = "true"
+when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+format = "[](fg:color_blue bg:none) "
+
+[custom.git_to_none_transition]
+command = "true"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+format = "[](fg:color_green bg:none) "
+
+[git_metrics]
+disabled = false
+added_style = "fg:color_bg0 bg:color_green"
+deleted_style = "bold fg:color_red bg:color_green"
+format = "([+$added ]($added_style))([-$deleted ]($deleted_style))"
+
+[sudo]
+disabled = false
+format = "[ ⚡](fg:color_red bg:color_bg1)"
+
+[cmd_duration]
+min_time = 0
+show_milliseconds = true
+format = "[ 󱎫 $duration ](fg:color_yellow)"
+disabled = false
+
+[shlvl]
+disabled = false
+format = "[  $shlvl ](fg:color_purple)"
+threshold = 2

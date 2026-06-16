@@ -1,0 +1,19 @@
+# Ignore everything by default
+*
+
+# Do not ignore directories so Git can scan them
+!*/
+
+# Whitelist files we want to track
+!.gitignore
+!config.fish
+!fish_plugins
+!conf.d/aliases.fish
+!conf.d/binds.fish
+!conf.d/env.fish
+!conf.d/gpg.fish
+!conf.d/paths.fish
+!functions/fisher.fish
+!functions/gse.fish
+!functions/where.fish
+!completions/fisher.fish
