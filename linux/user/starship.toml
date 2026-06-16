@@ -6,7 +6,7 @@ format = """
 $sudo\
 $username\
 $hostname\
-[](fg:color_bg1 bg:color_blue)\
+[](fg:color_terminal_bg bg:color_blue)\
 $directory\
 ${custom.dir_to_none_transition}\
 $git_branch\
@@ -23,16 +23,17 @@ palette = "onedark_pro"
 
 # OneDark-Pro palette (from your kitty theme)
 [palettes.onedark_pro]
-color_fg0    = "#ABB2BF"
-color_bg0    = "#282C34"
-color_bg1    = "#3F4451"
-color_red    = "#E06C75"
-color_green  = "#98C379"
-color_yellow = "#D19A66"
-color_blue   = "#61AFEF"
-color_purple = "#C678DD"
-color_cyan   = "#56B6C2"
-color_white  = "#D7DAE0"
+color_fg0         = "#ABB2BF"
+color_bg0         = "#282C34"
+color_bg1         = "#3F4451"
+color_red         = "#E06C75"
+color_green       = "#98C379"
+color_yellow      = "#D19A66"
+color_blue        = "#61AFEF"
+color_purple      = "#C678DD"
+color_cyan        = "#56B6C2"
+color_white       = "#D7DAE0"
+color_terminal_bg = "#1e1e2e"
 
 [status]
 disabled = false
@@ -47,14 +48,14 @@ symbol_threshold = 1
 
 [username]
 show_always = true
-format = "[ $user](fg:color_fg0 bg:color_bg1)"
-style_user = "fg:color_fg0 bg:color_bg1"
-style_root = "fg:color_fg0 bg:color_bg1"
+format = "[ $user](fg:color_fg0)"
+style_user = "fg:color_fg0"
+style_root = "fg:color_fg0"
 
 [hostname]
 ssh_only = false
-format = "[@$hostname ](fg:color_fg0 bg:color_bg1)"
-style = "fg:color_fg0 bg:color_bg1"
+format = "[@$hostname ](fg:color_fg0)"
+style = "fg:color_fg0"
 
 [directory]
 home_symbol = "~"
@@ -131,7 +132,7 @@ format = "([+$added ]($added_style))([-$deleted ]($deleted_style))"
 
 [sudo]
 disabled = false
-format = "[ ⚡](fg:color_red bg:color_bg1)"
+format = "[ ](fg:color_red)"
 
 [cmd_duration]
 min_time = 0
