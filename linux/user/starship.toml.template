@@ -6,7 +6,7 @@ format = """
 $sudo\
 $username\
 $hostname\
-[](fg:color_blue bg:none inverted)\
+[__NERDFONT(E0B0)__](fg:color_blue bg:none inverted)\
 $directory\
 ${custom.dir_to_none_transition}\
 $git_branch\
@@ -37,10 +37,10 @@ color_white       = "#D7DAE0"
 [status]
 disabled = false
 success_symbol = ""
-format = "[ 󰅚 $status ](fg:color_red)"
+format = "[ __NERDFONT(F015A)__ $status ](fg:color_red)"
 
 [jobs]
-symbol = ""
+symbol = "__NERDFONT(F423)__"
 format = "[ $symbol $number ](fg:color_cyan)"
 number_threshold = 1
 symbol_threshold = 1
@@ -60,68 +60,68 @@ style = "fg:color_fg0"
 home_symbol = "~"
 truncation_length = 0
 truncate_to_repo = false
-read_only = " "
+read_only = " __NERDFONT(F023)__"
 read_only_style = "fg:color_fg0 bg:color_blue"
 format = "[ $path$read_only ](fg:color_bg0 bg:color_blue)"
 style = "fg:color_bg0 bg:color_blue"
 
 [directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
-"Desktop" = " "
+"Documents" = "__NERDFONT(F0219)__ "
+"Downloads" = "__NERDFONT(F019)__ "
+"Music" = "__NERDFONT(F001)__ "
+"Pictures" = "__NERDFONT(F03E)__ "
+"Desktop" = "__NERDFONT(F108)__ "
 
 [git_branch]
-symbol = ""
+symbol = "__NERDFONT(F418)__"
 only_attached = true
-format = "[](fg:color_blue bg:color_green)[ $symbol $branch ](fg:color_bg0 bg:color_green)"
+format = "[__NERDFONT(E0B0)__](fg:color_blue bg:color_green)[ $symbol $branch ](fg:color_bg0 bg:color_green)"
 style = "fg:color_bg0 bg:color_yellow"
 
 [git_commit]
 only_detached = true
 commit_hash_length = 7
 tag_disabled = false
-tag_symbol = " "
-format = "[](fg:color_blue bg:color_green)[( $tag)( ↳ $hash )](fg:color_bg0 bg:color_green)"
+tag_symbol = "__NERDFONT(F02B)__ "
+format = "[__NERDFONT(E0B0)__](fg:color_blue bg:color_green)[( $tag)( __NERDFONT(21B3)__ $hash )](fg:color_bg0 bg:color_green)"
 style = "fg:color_bg0 bg:color_yellow"
 
 [git_state]
 disabled = false
 format = "[($state( $progress_current/$progress_total)) ](fg:color_bg0 bg:color_green)"
-rebase = " REBASING"
-merge = " MERGING"
-bisect = " BISECTING"
-cherry_pick = " CHERRY-PICKING"
-revert = " REVERTING"
-am = " AM"
-am_or_rebase = "/ AM/REBASE"
+rebase = "__NERDFONT(F51E)__ REBASING"
+merge = "__NERDFONT(E727)__ MERGING"
+bisect = "__NERDFONT(F002)__ BISECTING"
+cherry_pick = "__NERDFONT(E29B)__ CHERRY-PICKING"
+revert = "__NERDFONT(F0E2)__ REVERTING"
+am = "__NERDFONT(F0E0)__ AM"
+am_or_rebase = "__NERDFONT(F0E0)__/__NERDFONT(F51E)__ AM/REBASE"
 
 [git_status]
 disabled = false
 format = "[$all_status](fg:color_bg0 bg:color_green)"
-conflicted  = "[ ](fg:color_red bg:color_green)"
-stashed     = "[ ](fg:color_bg0 bg:color_green)"
-deleted     = "[ ](fg:color_red bg:color_green)"
-renamed     = "[󰑕 ](fg:color_bg0 bg:color_green)"
-modified    = "[ ](fg:color_bg0 bg:color_green)"
-typechanged = "[󰜱 ](fg:color_bg0 bg:color_green)"
-staged      = "[ ](fg:color_bg0 bg:color_green)"
-untracked   = "[ ](fg:color_bg0 bg:color_green)"
-ahead       = "[⇡ ](fg:color_bg0 bg:color_green)"
-behind      = "[⇣ ](fg:color_bg0 bg:color_green)"
-diverged    = "[⇕ ](fg:color_red bg:color_green)"
-up_to_date  = "[ ](fg:color_bg0 bg:color_green)"
+conflicted  = "[__NERDFONT(E727)__ ](fg:color_red bg:color_green)"
+stashed     = "[__NERDFONT(F487)__ ](fg:color_bg0 bg:color_green)"
+deleted     = "[__NERDFONT(F1F8)__ ](fg:color_red bg:color_green)"
+renamed     = "[__NERDFONT(F0455)__ ](fg:color_bg0 bg:color_green)"
+modified    = "[__NERDFONT(F459)__ ](fg:color_bg0 bg:color_green)"
+typechanged = "[__NERDFONT(F0731)__ ](fg:color_bg0 bg:color_green)"
+staged      = "[__NERDFONT(F457)__ ](fg:color_bg0 bg:color_green)"
+untracked   = "[__NERDFONT(F4E8)__ ](fg:color_bg0 bg:color_green)"
+ahead       = "[__NERDFONT(21E1)__ ](fg:color_bg0 bg:color_green)"
+behind      = "[__NERDFONT(21E3)__ ](fg:color_bg0 bg:color_green)"
+diverged    = "[__NERDFONT(21D5)__ ](fg:color_red bg:color_green)"
+up_to_date  = "[__NERDFONT(F42E)__ ](fg:color_bg0 bg:color_green)"
 
 [custom.dir_to_none_transition]
 command = "true"
 when = "! git rev-parse --is-inside-work-tree >/dev/null 2>&1"
-format = "[](fg:color_blue bg:none) "
+format = "[__NERDFONT(E0B0)__](fg:color_blue bg:none) "
 
 [custom.git_to_none_transition]
 command = "true"
 when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
-format = "[](fg:color_green bg:none) "
+format = "[__NERDFONT(E0B0)__](fg:color_green bg:none) "
 
 [git_metrics]
 disabled = false
@@ -131,15 +131,15 @@ format = "([+$added ]($added_style))([-$deleted ]($deleted_style))"
 
 [sudo]
 disabled = false
-format = "[ ](fg:color_red)"
+format = "[ __NERDFONT(F09C)__](fg:color_red)"
 
 [cmd_duration]
 min_time = 0
 show_milliseconds = true
-format = "[ 󱎫 $duration ](fg:color_yellow)"
+format = "[ __NERDFONT(F13AB)__ $duration ](fg:color_yellow)"
 disabled = false
 
 [shlvl]
 disabled = false
-format = "[  $shlvl ](fg:color_purple)"
+format = "[ __NERDFONT(F51E)__ $shlvl ](fg:color_purple)"
 threshold = 2

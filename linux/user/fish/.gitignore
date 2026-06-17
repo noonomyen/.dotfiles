@@ -10,10 +10,11 @@
 !fish_plugins
 !conf.d/aliases.fish
 !conf.d/binds.fish
-!conf.d/env.fish
+!conf.d/env.fish.template
 !conf.d/gpg.fish
 !conf.d/paths.fish
 !functions/fisher.fish
-!functions/gse.fish
+!functions/gse.fish.template
 !functions/where.fish
 !completions/fisher.fish
+!fzf-catppuccin

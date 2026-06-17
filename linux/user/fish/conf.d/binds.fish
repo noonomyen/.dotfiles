@@ -8,7 +8,7 @@ function fish_user_key_bindings
     if functions -q _natural_selection
         bind escape            '_natural_selection end-selection'
 
-        bind ctrl-r            '_natural_selection history-pager'
+        # bind ctrl-r            '_natural_selection history-pager'
 
         bind up                '_natural_selection up-or-search'
         bind down              '_natural_selection down-or-search'
