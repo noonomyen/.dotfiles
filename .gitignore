@@ -1,2 +1,2 @@
 # Ignore built config files
-linux/user/starship.toml
+starship.toml

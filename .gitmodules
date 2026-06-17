@@ -1,9 +1,9 @@
 [submodule "linux/user/kitty/kitty-kitten-search"]
-	path = linux/user/kitty/kitty-kitten-search
+	path = linux/main/kitty/kitty-kitten-search
 	url = https://github.com/trygveaa/kitty-kitten-search
 [submodule "linux/user/kitty/theme-catppuccin"]
-	path = linux/user/kitty/theme-catppuccin
+	path = linux/main/kitty/theme-catppuccin
 	url = https://github.com/catppuccin/kitty
 [submodule "linux/user/fish/fzf-catppuccin"]
-	path = linux/user/fish/fzf-catppuccin
+	path = linux/main/fish/fzf-catppuccin
 	url = https://github.com/catppuccin/fzf
