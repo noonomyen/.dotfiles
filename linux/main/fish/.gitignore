@@ -17,4 +17,5 @@
 !functions/gse.fish.template
 !functions/where.fish
 !completions/fisher.fish
+!completions/gdro.fish
 !fzf-catppuccin

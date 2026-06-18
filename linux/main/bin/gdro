@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# gVisor Docker run once
+
+vol_mode="ro"
+docker_args=()
+pass_args=()
+has_rw=false
+
+for arg in "$@"; do
+    if [ "$arg" = "-rw" ]; then
+        has_rw=true
+    else
+        pass_args+=("$arg")
+    fi
+done
+
+if [ "$has_rw" = true ]; then
+    vol_mode="rw"
+fi
+
+current_dir=$(pwd)
+
+docker_args=(
+    "--runtime=runsc"
+    "--rm"
+    "-it"
+    "--user" "$(id -u):$(id -g)"
+    "-v" "${current_dir}:${current_dir}:${vol_mode}"
+    "-w" "$current_dir"
+)
+
+exec docker run "${docker_args[@]}" "${pass_args[@]}"
