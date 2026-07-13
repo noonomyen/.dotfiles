@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""
+gdro - gVisor Docker run once
+
+A wrapper to run temporary gVisor (runsc) sandboxed Docker containers,
+mounting the current working directory.
+
+Usage:
+    gdro [-rw] <docker_run_args...>
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+
+
+# -- Entry point ---------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="gdro",
+        description="Run temporary gVisor (runsc) sandboxed Docker containers.",
+        epilog="Any remaining arguments are passed directly to 'docker run'.",
+    )
+    parser.add_argument(
+        "-rw",
+        "--rw",
+        action="store_true",
+        help="Mount the current directory as read-write (default is read-only).",
+    )
+
+    # Parse known args so we can pass the rest to docker
+    args, pass_args = parser.parse_known_args()
+
+    if not pass_args:
+        print("ERROR: Missing docker arguments (e.g., image name).")
+        print("Usage: gdro [-rw] <image> [command]")
+        sys.exit(1)
+
+    cwd = os.getcwd()
+    uid = os.getuid()
+    gid = os.getgid()
+    vol_mode = "rw" if args.rw else "ro"
+
+    docker_args = [
+        "docker",
+        "run",
+        "--runtime=runsc",
+        "--rm",
+        "-it",
+        "--user",
+        f"{uid}:{gid}",
+        "-v",
+        f"{cwd}:{cwd}:{vol_mode}",
+        "-w",
+        cwd,
+    ]
+
+    # Use execvp to replace the current process with docker
+    cmd = docker_args + pass_args
+    os.execvp("docker", cmd)
+
+
+if __name__ == "__main__":
+    main()

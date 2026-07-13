@@ -7,7 +7,7 @@ function __gdro_get_docker_run_completions
     set -l fake_args docker run
 
     for t in $tokens
-        if test "$t" != "-rw"
+        if not contains -- "$t" "-rw" "--rw"
             set fake_args $fake_args $t
         end
     end
@@ -26,4 +26,5 @@ function __gdro_get_docker_run_completions
 end
 
 complete -c gdro -a "(__gdro_get_docker_run_completions)"
-complete -c gdro -n "string match -r '^-' -- (commandline -ct)" -l rw -d 'Mount current directory with Read-Write permissions'
+complete -c gdro -n "string match -r '^-' -- (commandline -ct)" -l rw -o rw -d 'Mount current directory with Read-Write permissions'
+complete -c gdro -s h -l help -d 'Show help'

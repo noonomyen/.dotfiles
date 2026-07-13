@@ -1,0 +1,619 @@
+#!/usr/bin/env python3
+"""
+dgpu-mode - Switch dGPU between nvidia, vfio, and off modes.
+
+Designed for ASUS laptops with a switchable NVIDIA dGPU.
+Uses CARDWIRE_ALLOW=1 env to bypass the cardwire eBPF LSM
+that blocks GPU access in smart mode.
+
+Usage:
+    dgpu-mode              Show current status
+    dgpu-mode nvidia       Bind dGPU to host nvidia driver
+    dgpu-mode vfio         Bind dGPU to vfio-pci for VM passthrough
+    dgpu-mode off          Power off dGPU via ASUS WMI
+    dgpu-mode --help       Show help
+"""
+
+from __future__ import annotations
+
+import argparse
+import fcntl
+import os
+import pwd
+import subprocess
+import sys
+import time
+from pathlib import Path
+from typing import Literal, NamedTuple
+
+# -- Constants -----------------------------------------------------------------
+
+GPU_VGA = "0000:01:00.0"
+GPU_AUDIO = "0000:01:00.1"
+PCI_DEVICES = Path("/sys/bus/pci/devices")
+DGPU_DISABLE = Path("/sys/devices/platform/asus-nb-wmi/dgpu_disable")
+LOCK_PATH = Path("/run/dgpu-mode.lock")
+PROBE_TIMEOUT = 10.0  # seconds
+
+State = Literal["nvidia", "vfio", "off", "unknown"]
+
+SPINNER = "|/-\\"
+
+STATE_LABELS: dict[State, str] = {
+    "nvidia":  "NVIDIA (Host)",
+    "vfio":    "VFIO (VM Passthrough)",
+    "off":     "OFF (Disabled)",
+    "unknown": "Unknown",
+}
+
+
+# -- Sysfs helpers -------------------------------------------------------------
+
+def sysfs_read(path: Path | str) -> str:
+    return Path(path).read_text().strip()
+
+
+def sysfs_write(path: Path | str, value: str) -> None:
+    Path(path).write_text(value)
+
+
+# -- Driver & state detection --------------------------------------------------
+
+def get_driver(pci_id: str) -> str:
+    """Return the driver currently bound to a PCI device, or 'none'."""
+    link = PCI_DEVICES / pci_id / "driver"
+    if link.exists():
+        return link.resolve().name
+    return "none"
+
+
+def get_state() -> State:
+    """
+    Determine current dGPU state from WMI status and bound drivers:
+      nvidia  = VGA=nvidia,   Audio=snd_hda_intel
+      vfio    = VGA=vfio-pci, Audio=vfio-pci
+      off     = WMI disabled
+      unknown = anything else (driver mismatch, partial bind, etc.)
+    """
+    if DGPU_DISABLE.exists() and sysfs_read(DGPU_DISABLE) == "1":
+        return "off"
+
+    vga = get_driver(GPU_VGA)
+    audio = get_driver(GPU_AUDIO)
+
+    if vga == "nvidia" and audio == "snd_hda_intel":
+        return "nvidia"
+    if vga == "vfio-pci" and audio == "vfio-pci":
+        return "vfio"
+    if vga == "none" and audio == "none":
+        # Both unbound but WMI says enabled — transitional state,
+        # but we treat it as unknown since it shouldn't persist.
+        return "unknown"
+
+    return "unknown"
+
+
+CARDWIRE_WAIT_TIMEOUT = 3.0  # seconds
+CARDWIRE_SMART_MODE = 3
+
+
+def _bpftool_map_exists(name: str) -> bool:
+    """Check if a named eBPF map exists."""
+    r = subprocess.run(
+        ["bpftool", "map", "show", "name", name],
+        capture_output=True, text=True,
+    )
+    return r.returncode == 0 and bool(r.stdout.strip())
+
+
+def _bpftool_map_lookup_value(name: str, key_bytes: bytes) -> int | None:
+    """Lookup a value in a named eBPF map by key. Returns value or None."""
+    key_args = [f"0x{b:02x}" for b in key_bytes]
+    r = subprocess.run(
+        ["bpftool", "-j", "map", "lookup", "name", name, "key"] + key_args,
+        capture_output=True, text=True,
+    )
+    if r.returncode != 0:
+        return None
+    try:
+        import json
+        data = json.loads(r.stdout)
+        return data.get("value")
+    except (json.JSONDecodeError, AttributeError):
+        return None
+
+
+def wait_for_cardwire_allow() -> None:
+    """
+    Verify cardwire eBPF state and wait for our PID to be allowed.
+
+    1. Check if cardwire is loaded (cw_allowed_pid map exists).
+       If not, warn and continue - cardwire is not blocking anything.
+    2. Check cw_mode map. If mode != 3 (smart), warn the user since
+       smart mode is expected for safe driver switching.
+    3. Poll cw_allowed_pid until our PID appears, confirming the LSM
+       has processed our CARDWIRE_ALLOW=1 exec and granted access.
+    """
+    # 1. Check if cardwire is loaded (both maps must exist)
+    if not _bpftool_map_exists("cw_allowed_pid") or not _bpftool_map_exists("cw_mode"):
+        print("WARNING: cardwire eBPF is not loaded, proceeding without it.")
+        return
+
+    # 2. Check cardwire mode
+    mode_key = (0).to_bytes(4, byteorder="little")
+    mode = _bpftool_map_lookup_value("cw_mode", mode_key)
+    if mode is not None and mode != CARDWIRE_SMART_MODE:
+        print(f"WARNING: cardwire mode is {mode}, expected {CARDWIRE_SMART_MODE} (smart).")
+
+    # 3. Wait for our PID in the allow list
+    pid = os.getpid()
+    pid_key = pid.to_bytes(4, byteorder="little")
+    cmd_args = [f"0x{b:02x}" for b in pid_key]
+    cmd = ["bpftool", "map", "lookup", "name", "cw_allowed_pid", "key"] + cmd_args
+
+    start = time.monotonic()
+    while time.monotonic() - start < CARDWIRE_WAIT_TIMEOUT:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            return
+        time.sleep(0.05)
+
+    print(f"WARNING: Timed out waiting for cardwire to allow PID {pid}.")
+    print("Proceeding anyway, sysfs operations may fail.")
+
+
+# -- GPU device node discovery (from PCI address) -----------------------------
+
+def get_gpu_device_nodes() -> list[Path]:
+    """
+    Discover all device nodes belonging to the dGPU by walking sysfs:
+      - /dev/nvidia*           global nvidia control/device nodes
+      - /dev/dri/card*, renderD*   mapped from PCI -> /sys/.../drm/
+      - /dev/vfio/<group>      mapped from PCI -> iommu_group
+    This correctly handles iGPU/dGPU card number swaps across boots.
+    """
+    nodes: list[Path] = []
+
+    # nvidia device nodes (global - only one dGPU on this laptop)
+    for node in Path("/dev").glob("nvidia*"):
+        if node.is_char_device():
+            nodes.append(node)
+
+    # DRI nodes: resolve from PCI sysfs so we track the right card number
+    drm_dir = PCI_DEVICES / GPU_VGA / "drm"
+    if drm_dir.exists():
+        for entry in drm_dir.iterdir():
+            dri_node = Path(f"/dev/dri/{entry.name}")
+            if dri_node.exists():
+                nodes.append(dri_node)
+
+    # VFIO group node: find IOMMU group number from sysfs
+    iommu_link = PCI_DEVICES / GPU_VGA / "iommu_group"
+    if iommu_link.exists():
+        group = iommu_link.resolve().name
+        vfio_node = Path(f"/dev/vfio/{group}")
+        if vfio_node.exists():
+            nodes.append(vfio_node)
+
+    return nodes
+
+
+# -- FD holder detection -------------------------------------------------------
+
+class FDHolder(NamedTuple):
+    pid: int
+    user: str
+    comm: str
+    device: str
+
+
+def find_fd_holders() -> list[FDHolder]:
+    """Scan /proc/*/fd/ for open file descriptors pointing to GPU device nodes."""
+    targets = {str(n) for n in get_gpu_device_nodes()}
+    if not targets:
+        return []
+
+    holders: list[FDHolder] = []
+    seen: set[tuple[int, str]] = set()
+
+    for pid_dir in Path("/proc").iterdir():
+        if not pid_dir.name.isdigit():
+            continue
+        fd_dir = pid_dir / "fd"
+        try:
+            for fd_link in fd_dir.iterdir():
+                try:
+                    resolved = str(fd_link.resolve())
+                except (PermissionError, OSError):
+                    continue
+                if resolved not in targets:
+                    continue
+
+                pid = int(pid_dir.name)
+                if (pid, resolved) in seen:
+                    continue
+                seen.add((pid, resolved))
+
+                try:
+                    comm = (pid_dir / "comm").read_text().strip()
+                    user = pwd.getpwuid(pid_dir.stat().st_uid).pw_name
+                except (FileNotFoundError, KeyError, PermissionError):
+                    comm, user = "?", "?"
+
+                holders.append(FDHolder(pid, user, comm, resolved))
+        except (PermissionError, FileNotFoundError):
+            continue
+
+    return holders
+
+
+def assert_no_fd_holders() -> None:
+    """Exit with error if any process is holding GPU file descriptors."""
+    holders = find_fd_holders()
+    if not holders:
+        print("No GPU file descriptors held.")
+        return
+
+    # Group by device node for readable output
+    by_device: dict[str, list[FDHolder]] = {}
+    for h in holders:
+        by_device.setdefault(h.device, []).append(h)
+
+    print()
+    print("ERROR: Processes are holding GPU file descriptors:")
+    print()
+    for device, procs in sorted(by_device.items()):
+        print(f"{device}:")
+        for h in procs:
+            print(f"PID {h.pid} ({h.user}) -> {h.comm}")
+    print()
+    print("Close these applications before switching GPU mode.")
+    sys.exit(1)
+
+
+# -- Hardware control primitives -----------------------------------------------
+
+def enable_dgpu_wmi() -> None:
+    """Enable dGPU at ASUS WMI firmware level + rescan PCI bus to discover it."""
+    if not DGPU_DISABLE.exists():
+        return
+    if sysfs_read(DGPU_DISABLE) != "1":
+        return
+
+    print("Enabling dGPU via ASUS WMI...")
+    sysfs_write(DGPU_DISABLE, "0")
+    time.sleep(1)
+    print("Rescanning PCI bus...")
+    sysfs_write("/sys/bus/pci/rescan", "1")
+    time.sleep(1)
+
+
+def disable_dgpu_wmi() -> None:
+    """Cut power to dGPU at ASUS WMI firmware level."""
+    if DGPU_DISABLE.exists():
+        print("Disabling dGPU via ASUS WMI...")
+        sysfs_write(DGPU_DISABLE, "1")
+
+
+def set_power_control(mode: str) -> None:
+    """
+    Set PCI runtime power control for both GPU devices.
+      'on'   = always powered (needed before unbind, and for VFIO)
+      'auto' = kernel manages power (for normal nvidia host use)
+    """
+    for pci_id in [GPU_VGA, GPU_AUDIO]:
+        path = PCI_DEVICES / pci_id / "power" / "control"
+        if path.exists():
+            try:
+                sysfs_write(path, mode)
+            except OSError:
+                pass
+
+
+def unbind_all() -> None:
+    """Unbind both GPU devices from whatever driver they are currently on."""
+    for pci_id in [GPU_VGA, GPU_AUDIO]:
+        drv = get_driver(pci_id)
+        if drv != "none":
+            print(f"Unbinding {pci_id} from {drv}...")
+            sysfs_write(PCI_DEVICES / pci_id / "driver" / "unbind", pci_id)
+
+
+def set_driver_overrides(driver: str | None) -> None:
+    """Set or clear driver_override for both GPU devices."""
+    for pci_id in [GPU_VGA, GPU_AUDIO]:
+        path = PCI_DEVICES / pci_id / "driver_override"
+        if path.exists():
+            # A newline clears the override in sysfs
+            sysfs_write(path, driver if driver else "\n")
+
+
+def remove_pci_devices() -> None:
+    """Remove both GPU PCI devices from the kernel device tree."""
+    for pci_id in [GPU_VGA, GPU_AUDIO]:
+        path = PCI_DEVICES / pci_id / "remove"
+        if path.exists():
+            print(f"Removing {pci_id} from PCI tree...")
+            try:
+                sysfs_write(path, "1")
+            except OSError:
+                pass
+
+
+def probe_devices() -> None:
+    """Trigger kernel driver probe for both GPU devices."""
+    for pci_id in [GPU_VGA, GPU_AUDIO]:
+        sysfs_write("/sys/bus/pci/drivers_probe", pci_id)
+
+
+def ensure_module(name: str) -> None:
+    """Load a kernel module if it's not already loaded."""
+    result = subprocess.run(["lsmod"], capture_output=True, text=True)
+    # Module names use underscores in lsmod output
+    if name.replace("-", "_") not in result.stdout:
+        print(f"Loading kernel module: {name}...")
+        subprocess.run(["modprobe", name], check=True)
+
+
+def bind_to_driver(driver: str) -> None:
+    """Bind both GPU devices to a specific driver."""
+    bind_path = f"/sys/bus/pci/drivers/{driver}/bind"
+    for pci_id in [GPU_VGA, GPU_AUDIO]:
+        if get_driver(pci_id) != driver:
+            print(f"Binding {pci_id} -> {driver}...")
+            sysfs_write(bind_path, pci_id)
+
+
+# -- Wait for state with spinner animation ------------------------------------
+
+def wait_for_state(target: State) -> bool:
+    """
+    Poll GPU state until it matches target, showing a spinner animation.
+    Returns True on success, False on timeout.
+    """
+    start = time.monotonic()
+    i = 0
+
+    while True:
+        elapsed = time.monotonic() - start
+        current = get_state()
+
+        if current == target:
+            print(f"\rOK: State reached: {target} ({elapsed:.1f}s)          ")
+            return True
+
+        if elapsed >= PROBE_TIMEOUT:
+            print(f"\rFAIL: Timeout after {PROBE_TIMEOUT:.0f}s                    ")
+            print(f"Expected: {target}")
+            print(f"Got:      {current}")
+            print(f"VGA:      {get_driver(GPU_VGA)}")
+            print(f"Audio:    {get_driver(GPU_AUDIO)}")
+            print()
+            print("Try running the command again.")
+            return False
+
+        frame = SPINNER[i % len(SPINNER)]
+        print(f"\r{frame} Waiting for '{target}'... ({elapsed:.1f}s)", end="", flush=True)
+        time.sleep(0.2)
+        i += 1
+
+
+# -- Mode switch functions -----------------------------------------------------
+
+def check_state_or_force(current: State, target: State, force: bool) -> bool:
+    """
+    Validate that switching is safe.
+    Returns True if already in target state (skip switch).
+    Exits if state is unknown and --force not given.
+    """
+    if current == target:
+        print(f"Already in {target} mode.")
+        return True
+
+    if current == "unknown" and not force:
+        vga = get_driver(GPU_VGA)
+        audio = get_driver(GPU_AUDIO)
+        print(f"ERROR: Current state is unknown (VGA={vga}, Audio={audio}).")
+        print("Use --force to override.")
+        sys.exit(1)
+
+    return False
+
+
+def switch_to_nvidia(force: bool) -> None:
+    print("Switching to NVIDIA mode...")
+
+    if check_state_or_force(get_state(), "nvidia", force):
+        return
+
+    enable_dgpu_wmi()
+
+    # After WMI enable + PCI rescan, kernel may auto-bind nvidia.
+    # Re-check to avoid unnecessary unbind/rebind cycle.
+    if get_state() == "nvidia":
+        print("Already bound after WMI enable.")
+        set_power_control("auto")
+        print("DONE: dGPU is now in NVIDIA mode.")
+        return
+
+    # Wake devices before unbind to prevent kernel hang
+    set_power_control("on")
+    assert_no_fd_holders()
+    unbind_all()
+    set_driver_overrides(None)
+
+    # Probe triggers async driver matching - nvidia + snd_hda_intel
+    probe_devices()
+
+    if not wait_for_state("nvidia"):
+        sys.exit(1)
+
+    # Allow runtime PM for normal host usage (GPU can sleep when idle)
+    set_power_control("auto")
+
+    print("DONE: dGPU is now in NVIDIA mode.")
+
+
+def switch_to_vfio(force: bool) -> None:
+    print("Switching to VFIO mode...")
+
+    if check_state_or_force(get_state(), "vfio", force):
+        return
+
+    enable_dgpu_wmi()
+
+    # Wake devices before unbind to prevent kernel hang
+    set_power_control("on")
+    assert_no_fd_holders()
+    unbind_all()
+    set_driver_overrides("vfio-pci")
+    ensure_module("vfio-pci")
+    bind_to_driver("vfio-pci")
+
+    if not wait_for_state("vfio"):
+        sys.exit(1)
+
+    # Keep power always on - VFIO devices must stay awake for VM access.
+    # Allowing suspend here can cause the VM to hang or lose the device.
+    set_power_control("on")
+
+    print("DONE: dGPU is now in VFIO mode (ready for VM passthrough).")
+
+
+def switch_to_off(force: bool) -> None:
+    print("Switching to OFF mode...")
+
+    if check_state_or_force(get_state(), "off", force):
+        return
+
+    # Wake devices before unbind to prevent kernel hang
+    set_power_control("on")
+    assert_no_fd_holders()
+    unbind_all()
+    set_driver_overrides(None)
+
+    # Remove from PCI tree first, then cut power via WMI.
+    # Order matters: WMI disable with devices still in tree can cause link errors.
+    remove_pci_devices()
+    disable_dgpu_wmi()
+
+    if not wait_for_state("off"):
+        sys.exit(1)
+
+    print("DONE: dGPU is now OFF.")
+
+
+# -- Status display ------------------------------------------------------------
+
+def show_status() -> None:
+    state = get_state()
+    print(f"State: {STATE_LABELS[state]}")
+
+    if state != "off":
+        print(f"VGA   ({GPU_VGA}): {get_driver(GPU_VGA)}")
+        print(f"Audio ({GPU_AUDIO}): {get_driver(GPU_AUDIO)}")
+
+    if DGPU_DISABLE.exists():
+        val = sysfs_read(DGPU_DISABLE)
+        print(f"WMI dgpu_disable: {val}")
+
+
+# -- Process lock --------------------------------------------------------------
+
+def acquire_lock() -> int:
+    """
+    Acquire an exclusive process lock via flock().
+    The lock is bound to the file descriptor - when this process exits
+    (even if killed by SIGKILL), the FD closes and the lock releases
+    automatically. No stale lock files.
+    """
+    fd = os.open(str(LOCK_PATH), os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        os.close(fd)
+        print("ERROR: Another dgpu-mode instance is already running.")
+        sys.exit(1)
+    return fd
+
+
+# -- Cardwire eBPF LSM bypass --------------------------------------------------
+
+def ensure_cardwire_bypass() -> None:
+    """
+    Re-exec this process with CARDWIRE_ALLOW=1 in the environment.
+
+    Cardwire is an eBPF LSM that runs in 'smart' mode by default,
+    blocking all processes from accessing the dGPU. This prevents
+    rogue processes from grabbing GPU file descriptors that would
+    block driver unbind/bind operations.
+
+    By re-execing with CARDWIRE_ALLOW=1, the eBPF program sees the
+    env var at exec time and grants this process GPU access.
+    """
+    if os.environ.get("CARDWIRE_ALLOW") == "1":
+        return
+
+    env = os.environ.copy()
+    env["CARDWIRE_ALLOW"] = "1"
+    os.execve(sys.executable, [sys.executable] + sys.argv, env)
+
+
+# -- Entry point ---------------------------------------------------------------
+
+SWITCH_FN = {
+    "nvidia": switch_to_nvidia,
+    "vfio":   switch_to_vfio,
+    "off":    switch_to_off,
+}
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="dgpu-mode",
+        description="Switch dGPU between nvidia, vfio, and off modes.",
+    )
+    parser.add_argument(
+        "mode",
+        nargs="?",
+        choices=["nvidia", "vfio", "off"],
+        help="Target mode. Omit to show current status.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force switch even when current state is unknown.",
+    )
+    args = parser.parse_args()
+
+    # Re-exec with CARDWIRE_ALLOW=1 so eBPF LSM allows GPU sysfs access.
+    # This is needed for ALL operations including status reads.
+    ensure_cardwire_bypass()
+
+    # No args -> show status (no root required)
+    if args.mode is None:
+        # For non-root status, bpftool is unavailable so we read sysfs
+        # directly. The re-exec above is usually sufficient for cardwire.
+        show_status()
+        return
+
+    # Switching requires root
+    if os.getuid() != 0:
+        print(f"ERROR: Run as root:  sudo dgpu-mode {args.mode}")
+        sys.exit(1)
+
+    # Wait for cardwire eBPF to confirm our PID is in the allow list.
+    # This guarantees sysfs reads/writes will not be blocked by the LSM.
+    wait_for_cardwire_allow()
+
+    # Exclusive lock - auto-releases when this process exits
+    lock_fd = acquire_lock()
+
+    try:
+        SWITCH_FN[args.mode](args.force)
+    finally:
+        os.close(lock_fd)
+
+
+if __name__ == "__main__":
+    main()
