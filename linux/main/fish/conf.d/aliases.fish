@@ -4,9 +4,9 @@ if status is-interactive
     alias clear "printf '\033[2J\033[3J\033[1;1H'"
     alias cls="clear"
     alias cd="z"
-    alias l="eza -alghHiMnOSmU -o --smart-group --group-directories-first --git --icons --time-style=long-iso --color=always --hyperlink"
-    alias ls="eza --group-directories-first --git --icons --time-style=long-iso --color=always --hyperlink"
-    alias lt="eza --grid --tree --icons --group-directories-first --color=always --hyperlink"
+    alias l="eza -alghHiMnOSmU -o --smart-group --group-directories-first --git --icons --time-style=long-iso --color=always --hyperlink=auto"
+    alias ls="eza --group-directories-first --git --icons --time-style=long-iso --color=always --hyperlink=auto"
+    alias lt="eza --grid --tree --icons --group-directories-first --color=always --hyperlink=auto"
     alias ssh="env TERM=xterm-256color ssh"
     alias kssh="kitty +kitten ssh"
 
