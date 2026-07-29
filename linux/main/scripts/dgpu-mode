@@ -441,6 +441,7 @@ def switch_to_nvidia(force: bool) -> None:
     assert_no_fd_holders()
     unbind_all()
     set_driver_overrides(None)
+    ensure_module("nvidia")
 
     # Probe triggers async driver matching - nvidia + snd_hda_intel
     probe_devices()
