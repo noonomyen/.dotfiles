@@ -18,16 +18,20 @@ install: check-not-root
 	@echo "Installing user scripts to $(USER_BINDIR)..."
 	install -d $(DESTDIR)$(USER_BINDIR)
 	install -m 755 gdro $(DESTDIR)$(USER_BINDIR)/gdro
+	install -m 755 flameshot-run $(DESTDIR)$(USER_BINDIR)/flameshot-run
 	@echo "Installing system scripts to $(SYS_BINDIR) (requires sudo)..."
 	sudo install -d $(DESTDIR)$(SYS_BINDIR)
 	sudo install -m 755 dgpu-mode $(DESTDIR)$(SYS_BINDIR)/dgpu-mode
 	sudo install -m 755 huge $(DESTDIR)$(SYS_BINDIR)/huge
+	sudo install -m 755 clipboard-manager $(DESTDIR)$(SYS_BINDIR)/clipboard-manager
 	@echo "Done!"
 
 uninstall: check-not-root
 	@echo "Removing user scripts from $(USER_BINDIR)..."
 	rm -f $(DESTDIR)$(USER_BINDIR)/gdro
+	rm -f $(DESTDIR)$(USER_BINDIR)/flameshot-run
 	@echo "Removing system scripts from $(SYS_BINDIR) (requires sudo)..."
 	sudo rm -f $(DESTDIR)$(SYS_BINDIR)/dgpu-mode
 	sudo rm -f $(DESTDIR)$(SYS_BINDIR)/huge
+	sudo rm -f $(DESTDIR)$(SYS_BINDIR)/clipboard-manager
 	@echo "Done!"

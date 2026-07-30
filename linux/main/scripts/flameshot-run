@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Directory to save screenshots
+SAVE_DIR="$HOME/Pictures/Flameshot"
+
+# Create directory if it does not exist
+mkdir -p "$SAVE_DIR"
+
+# Generate filename format: YYYY-MM-dd_HH-mm-ss.png
+FILE_NAME="$(date +'%Y-%m-%d_%H-%M-%S.png')"
+FILE_PATH="$SAVE_DIR/$FILE_NAME"
+
+# Run flameshot gui with --accept-on-select and target path
+flameshot gui --accept-on-select -p "$FILE_PATH"
+
+# If the file was saved successfully, copy it to clipboard via wl-copy
+if [ -f "$FILE_PATH" ]; then
+    wl-copy -t image/png < "$FILE_PATH"
+fi

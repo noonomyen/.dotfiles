@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Mutex / Toggle: If wofi is already running, kill it and exit
+if pgrep -x wofi >/dev/null; then
+    pkill -x wofi
+    exit 0
+fi
+
+case "$1" in
+    wipe|clear)
+        cliphist wipe
+        ;;
+    *)
+        SELECTED=$(cliphist list | wofi --dmenu -p "Clipboard")
+        if [ -n "$SELECTED" ]; then
+            echo "$SELECTED" | cliphist decode | wl-copy
+        fi
+        ;;
+esac
