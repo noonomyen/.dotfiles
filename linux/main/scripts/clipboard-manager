@@ -1,19 +1,77 @@
 #!/bin/sh
 
-# Mutex / Toggle: If wofi is already running, kill it and exit
-if pgrep -x wofi >/dev/null; then
-    pkill -x wofi
+# Mutex / Toggle: If wofi for Clipboard is already running, kill it and exit
+if pgrep -f "wofi .* -p Clipboard" >/dev/null 2>&1; then
+    pkill -f "wofi .* -p Clipboard"
     exit 0
 fi
 
-case "$1" in
-    wipe|clear)
-        cliphist wipe
-        ;;
-    *)
-        SELECTED=$(cliphist list | wofi --dmenu -p "Clipboard")
-        if [ -n "$SELECTED" ]; then
-            echo "$SELECTED" | cliphist decode | wl-copy
-        fi
-        ;;
-esac
+USE_GNOME=false
+ACTION=""
+
+for arg in "$@"; do
+    case "$arg" in
+        --gnome)
+            USE_GNOME=true
+            ;;
+        wipe|clear)
+            ACTION="wipe"
+            ;;
+        *)
+            ;;
+    esac
+done
+
+if [ "$USE_GNOME" = true ]; then
+    case "$ACTION" in
+        wipe)
+            gpaste-client empty
+            ;;
+        *)
+            UUID=$(python3 -c '
+import subprocess, sys
+
+try:
+    raw = subprocess.check_output(["gpaste-client", "--oneline", "history"]).decode("utf-8", errors="replace").strip().split("\n")
+except Exception:
+    sys.exit(0)
+
+entries = []
+for line in raw:
+    if ": " in line:
+        parts = line.split(": ", 1)
+        entries.append((parts[0], parts[1]))
+
+entries = entries[:50]
+display_input = "\n".join(e[1] for e in entries) if entries else "\n"
+
+try:
+    proc = subprocess.Popen(["wofi", "--dmenu", "-p", "Clipboard"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    selected_text, _ = proc.communicate(input=display_input)
+    if selected_text and entries:
+        selected_text = selected_text.rstrip("\r\n")
+        for u, t in entries:
+            if t == selected_text:
+                print(u)
+                break
+except Exception:
+    sys.exit(0)
+')
+            if [ -n "$UUID" ]; then
+                gpaste-client select "$UUID"
+            fi
+            ;;
+    esac
+else
+    case "$ACTION" in
+        wipe)
+            cliphist wipe
+            ;;
+        *)
+            SELECTED=$(cliphist list | wofi --dmenu -p "Clipboard")
+            if [ -n "$SELECTED" ]; then
+                printf '%s\n' "$SELECTED" | cliphist decode | wl-copy
+            fi
+            ;;
+    esac
+fi
