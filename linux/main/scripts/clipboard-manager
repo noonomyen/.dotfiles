@@ -28,37 +28,10 @@ if [ "$USE_GNOME" = true ]; then
             gpaste-client empty
             ;;
         *)
-            UUID=$(python3 -c '
-import subprocess, sys
-
-try:
-    raw = subprocess.check_output(["gpaste-client", "--oneline", "history"]).decode("utf-8", errors="replace").strip().split("\n")
-except Exception:
-    sys.exit(0)
-
-entries = []
-for line in raw:
-    if ": " in line:
-        parts = line.split(": ", 1)
-        entries.append((parts[0], parts[1]))
-
-entries = entries[:50]
-display_input = "\n".join(e[1] for e in entries) if entries else "\n"
-
-try:
-    proc = subprocess.Popen(["wofi", "--dmenu", "-p", "Clipboard"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
-    selected_text, _ = proc.communicate(input=display_input)
-    if selected_text and entries:
-        selected_text = selected_text.rstrip("\r\n")
-        for u, t in entries:
-            if t == selected_text:
-                print(u)
-                break
-except Exception:
-    sys.exit(0)
-')
-            if [ -n "$UUID" ]; then
-                gpaste-client select "$UUID"
+            SELECTED=$(gpaste-client --use-index --oneline history | head -n 50 | wofi --dmenu -p "Clipboard")
+            if [ -n "$SELECTED" ]; then
+                INDEX=$(echo "$SELECTED" | cut -d':' -f1)
+                gpaste-client --use-index select "$INDEX"
             fi
             ;;
     esac
@@ -68,7 +41,7 @@ else
             cliphist wipe
             ;;
         *)
-            SELECTED=$(cliphist list | wofi --dmenu -p "Clipboard")
+            SELECTED=$(cliphist list | head -n 50 | wofi --dmenu -p "Clipboard")
             if [ -n "$SELECTED" ]; then
                 printf '%s\n' "$SELECTED" | cliphist decode | wl-copy
             fi
