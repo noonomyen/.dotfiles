@@ -1,0 +1,491 @@
+#!/usr/bin/env python3
+"""
+memctl - Memory control, swap release, cache dropping, and hugepages management utility.
+
+Usage:
+    memctl info                      Show comprehensive memory status
+    memctl swap release [--force]    Safely release swap memory back into RAM
+    memctl swap status               Show swap & zswap/zram details
+    memctl cache drop [LEVEL]        Drop caches (1: pagecache, 2: dentries/inodes, 3: both [default])
+    memctl huge [status|list|N|0]    Hugepages management
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+import time
+from pathlib import Path
+import subprocess
+
+# -- Constants -----------------------------------------------------------------
+
+HUGE_DIR = Path("/sys/kernel/mm/hugepages/hugepages-2048kB")
+NR_HUGEPAGES = HUGE_DIR / "nr_hugepages"
+FREE_HUGEPAGES = HUGE_DIR / "free_hugepages"
+DROP_CACHES = Path("/proc/sys/vm/drop_caches")
+COMPACT_MEMORY = Path("/proc/sys/vm/compact_memory")
+MEMINFO = Path("/proc/meminfo")
+
+TIMEOUT = 30
+SPINNER = "|/-\\"
+SAFETY_HEADROOM_KB = 256 * 1024  # 256 MB safety buffer for RAM
+
+# -- Helper Functions ----------------------------------------------------------
+
+def read_sysfs(path: Path) -> int:
+    try:
+        content = path.read_text().strip()
+        return int(content)
+    except (OSError, ValueError) as e:
+        raise OSError(f"Failed to read {path}: {e}")
+
+def write_sysfs(path: Path, val: str) -> None:
+    try:
+        path.write_text(val)
+    except (OSError, ValueError) as e:
+        raise OSError(f"Failed to write '{val}' to {path}: {e}")
+
+def fmt_size(kb: int) -> str:
+    """Format size in kB into human readable string."""
+    if kb >= 1048576:
+        return f"{kb / 1048576:.2f} GB"
+    elif kb >= 1024:
+        return f"{kb / 1024:.1f} MB"
+    return f"{kb} kB"
+
+def require_root(action_desc: str) -> None:
+    if os.getuid() != 0:
+        print(f"ERROR: {action_desc} requires root privileges.", file=sys.stderr)
+        print(f"Run as root: sudo memctl ...", file=sys.stderr)
+        sys.exit(1)
+
+def parse_meminfo() -> dict[str, int]:
+    info = {}
+    if not MEMINFO.exists():
+        return info
+    try:
+        with open(MEMINFO, "r") as f:
+            for line in f:
+                parts = line.split(":")
+                if len(parts) == 2:
+                    key = parts[0].strip()
+                    val_parts = parts[1].strip().split()
+                    if val_parts:
+                        try:
+                            info[key] = int(val_parts[0])
+                        except ValueError:
+                            pass
+    except OSError:
+        pass
+    return info
+
+def get_swap_info() -> dict:
+    mem = parse_meminfo()
+    swap_total = mem.get("SwapTotal", 0)
+    swap_free = mem.get("SwapFree", 0)
+    swap_used = max(0, swap_total - swap_free)
+
+    zswap_compressed = mem.get("Zswap", 0)
+    zswap_uncompressed = mem.get("Zswapped", 0)
+
+    zram_compressed = 0
+    zram_uncompressed = 0
+    sys_block = Path("/sys/block")
+    if sys_block.exists():
+        for p in sys_block.glob("zram*"):
+            stat_file = p / "mm_stat"
+            if stat_file.exists():
+                try:
+                    parts = stat_file.read_text().split()
+                    if len(parts) >= 2:
+                        zram_uncompressed += int(parts[0]) // 1024
+                        zram_compressed += int(parts[1]) // 1024
+                except (OSError, ValueError):
+                    pass
+
+    total_compressed = zswap_compressed + zram_compressed
+    total_uncompressed = zswap_uncompressed + zram_uncompressed
+
+    ratio = (total_uncompressed / total_compressed) if (total_compressed > 0 and total_uncompressed > 0) else 1.0
+    net_ram_needed = max(0, swap_used - total_compressed)
+
+    return {
+        "swap_total": swap_total,
+        "swap_free": swap_free,
+        "swap_used": swap_used,
+        "zswap_compressed": zswap_compressed,
+        "zswap_uncompressed": zswap_uncompressed,
+        "zram_compressed": zram_compressed,
+        "zram_uncompressed": zram_uncompressed,
+        "total_compressed": total_compressed,
+        "total_uncompressed": total_uncompressed,
+        "compression_ratio": ratio,
+        "net_ram_needed": net_ram_needed,
+        "avail_ram": mem.get("MemAvailable", 0),
+    }
+
+# -- Subcommands Implementation ------------------------------------------------
+
+def cmd_info() -> None:
+    mem = parse_meminfo()
+    swap = get_swap_info()
+
+    mem_total = mem.get("MemTotal", 0)
+    mem_free = mem.get("MemFree", 0)
+    mem_avail = mem.get("MemAvailable", 0)
+    buffers = mem.get("Buffers", 0)
+    cached = mem.get("Cached", 0)
+    slab = mem.get("Slab", 0)
+    mem_used = max(0, mem_total - mem_avail)
+
+    print("=== Memory Overview ===")
+    print(f"  Total RAM:       {fmt_size(mem_total):>10}")
+    print(f"  Used RAM:        {fmt_size(mem_used):>10}  ({(mem_used/mem_total*100 if mem_total else 0):.1f}%)")
+    print(f"  Available RAM:   {fmt_size(mem_avail):>10}")
+    print(f"  Free RAM:        {fmt_size(mem_free):>10}")
+    print(f"  Buffers/Cache:   {fmt_size(buffers + cached + slab):>10}")
+
+    print("\n=== Swap & Zswap Status ===")
+    print(f"  Swap Total:      {fmt_size(swap['swap_total']):>10}")
+    print(f"  Swap Used:       {fmt_size(swap['swap_used']):>10}")
+    print(f"  Swap Free:       {fmt_size(swap['swap_free']):>10}")
+
+    if swap['total_compressed'] > 0:
+        print("\n  [Compression Active]")
+        if swap['zswap_compressed'] > 0:
+            print(f"  Zswap Compressed:   {fmt_size(swap['zswap_compressed']):>8}")
+            print(f"  Zswapped Data:      {fmt_size(swap['zswap_uncompressed']):>8}")
+        if swap['zram_compressed'] > 0:
+            print(f"  ZRAM Compressed:    {fmt_size(swap['zram_compressed']):>8}")
+            print(f"  ZRAM Data:          {fmt_size(swap['zram_uncompressed']):>8}")
+        print(f"  Compression Ratio:  {swap['compression_ratio']:>8.2f}x")
+        print(f"  Net RAM to Release: {fmt_size(swap['net_ram_needed']):>8}")
+    else:
+        print("  Zswap/ZRAM:      Inactive / None")
+
+    print("\n=== Hugepages Status ===")
+    if HUGE_DIR.exists():
+        try:
+            allocated = read_sysfs(NR_HUGEPAGES)
+            free = read_sysfs(FREE_HUGEPAGES)
+            print(f"  Allocated Pages: {allocated:>10} ({fmt_size(allocated * 2048)})")
+            print(f"  Free Pages:      {free:>10} ({fmt_size(free * 2048)})")
+        except OSError as e:
+            print(f"  Hugepages status unavailable: {e}")
+    else:
+        print("  Hugepages sysfs path not found.")
+
+def cmd_cache_drop(level: int) -> None:
+    require_root(f"cache drop level {level}")
+    if level not in (1, 2, 3):
+        print("ERROR: Invalid cache drop level. Must be 1, 2, or 3.", file=sys.stderr)
+        sys.exit(1)
+
+    level_desc = {
+        1: "Pagecache",
+        2: "Dentries & Inodes",
+        3: "Pagecache, Dentries & Inodes"
+    }[level]
+
+    print("Flushing file system buffers (sync)...")
+    subprocess.run(["sync"], check=True)
+
+    mem_before = parse_meminfo().get("MemAvailable", 0)
+    print(f"Dropping caches (Level {level}: {level_desc})...")
+
+    try:
+        write_sysfs(DROP_CACHES, str(level))
+    except OSError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    time.sleep(0.5)
+    mem_after = parse_meminfo().get("MemAvailable", 0)
+    freed = max(0, mem_after - mem_before)
+
+    print(f"DONE: Cache drop complete. Freed approx {fmt_size(freed)} (New Avail: {fmt_size(mem_after)}).")
+
+def cmd_swap_release(force: bool = False) -> None:
+    require_root("swap release")
+    swap = get_swap_info()
+
+    if swap["swap_used"] <= 1024:  # <= 1MB
+        print("DONE: Swap is empty or negligible. Nothing to release!")
+        return
+
+    avail_ram = swap["avail_ram"]
+    swap_used = swap["swap_used"]
+    net_needed = swap["net_ram_needed"]
+    comp_ram = swap["total_compressed"]
+
+    print("Swap & Memory Safety Evaluation:")
+    print(f"  Swap Used (Uncompressed): {fmt_size(swap_used)}")
+    if comp_ram > 0:
+        print(f"  Zswap/ZRAM Compressed:    {fmt_size(comp_ram)} (Ratio: {swap['compression_ratio']:.2f}x)")
+        print(f"  Net RAM Increase Needed:  {fmt_size(net_needed)}")
+    print(f"  Available RAM:            {fmt_size(avail_ram)}")
+    print(f"  RAM Safety Headroom:      {fmt_size(SAFETY_HEADROOM_KB)}")
+
+    required_ram_with_headroom = net_needed + SAFETY_HEADROOM_KB
+
+    # Check if auto cache drop is needed
+    if avail_ram < required_ram_with_headroom:
+        print("\nWARNING: Available RAM is close to required limit. Auto-dropping cache first...")
+        subprocess.run(["sync"], check=False)
+        try:
+            write_sysfs(DROP_CACHES, "3")
+        except OSError:
+            pass
+        time.sleep(0.5)
+
+        # Refresh mem & swap info
+        swap = get_swap_info()
+        avail_ram = swap["avail_ram"]
+        net_needed = swap["net_ram_needed"]
+        required_ram_with_headroom = net_needed + SAFETY_HEADROOM_KB
+        print(f"  Updated Available RAM:     {fmt_size(avail_ram)}")
+
+    # Safety decision
+    if avail_ram < required_ram_with_headroom:
+        msg = f"ERROR: Insufficient Available RAM ({fmt_size(avail_ram)}) to safely unpack swap ({fmt_size(net_needed)} + {fmt_size(SAFETY_HEADROOM_KB)} headroom)."
+        if force:
+            print(f"\n{msg}")
+            print("WARNING: '--force' flag provided! Proceeding despite low memory warning...")
+        else:
+            print(f"\n{msg}", file=sys.stderr)
+            print("Releasing swap now may freeze the system or trigger OOM Killer.", file=sys.stderr)
+            print("Use '--force' if you really want to force swapoff.", file=sys.stderr)
+            sys.exit(1)
+
+    print("Releasing swap memory back to RAM (swapoff -a)...")
+    swapoff_success = False
+    try:
+        subprocess.run(["swapoff", "-a"], check=True)
+        swapoff_success = True
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR: swapoff failed: {e}", file=sys.stderr)
+    finally:
+        # Always re-enable swap devices to ensure swap remains available for future memory pressure
+        print("Re-enabling swap devices (swapon -a)...")
+        try:
+            subprocess.run(["swapon", "-a"], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"ERROR: swapon failed: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    if swapoff_success:
+        print("DONE: All swap data has been moved back into RAM.")
+    else:
+        print("WARNING: swapoff encountered errors, but swap devices have been re-enabled.", file=sys.stderr)
+        sys.exit(1)
+
+def cmd_huge_status() -> None:
+    if not HUGE_DIR.exists():
+        print("ERROR: Hugepages sysfs directory not found.", file=sys.stderr)
+        sys.exit(1)
+    try:
+        allocated = read_sysfs(NR_HUGEPAGES)
+        free = read_sysfs(FREE_HUGEPAGES)
+    except OSError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Current Allocated Hugepages: {allocated}")
+    print(f"Current Free Hugepages:      {free}")
+
+def cmd_huge_list() -> None:
+    print("Scanning for processes using hugepages...")
+    users: list[tuple[int, str, int]] = []
+
+    proc_dir = Path("/proc")
+    if not proc_dir.exists():
+        print("DONE: Unable to access /proc directory.")
+        return
+
+    for p in proc_dir.iterdir():
+        if not p.name.isdigit():
+            continue
+        pid = int(p.name)
+        comm = "unknown"
+        huge_kb = 0
+        try:
+            with open(p / "status", "r") as f:
+                for line in f:
+                    if line.startswith("Name:"):
+                        comm = line.split(maxsplit=1)[1].strip()
+                    elif line.startswith("HugetlbPages:"):
+                        parts = line.split()
+                        if len(parts) >= 2 and parts[1].isdigit():
+                            huge_kb = int(parts[1])
+                        break
+            if huge_kb > 0:
+                users.append((pid, comm, huge_kb))
+        except (OSError, ValueError, IndexError):
+            continue
+
+    if not users:
+        print("DONE: No processes are currently using hugepages.")
+        return
+
+    print(f"DONE: Found {len(users)} process(es) using hugepages:")
+    for pid, comm, kb in users:
+        pages = kb // 2048
+        mb = kb // 1024
+        size_str = f"{pages} pages ({mb / 1024:.2f} GB)" if mb >= 1024 else f"{pages} pages ({mb} MB)"
+        print(f"  PID: {pid:<8} Size: {size_str:<25} Command: {comm}")
+
+def cmd_huge_release() -> None:
+    require_root("huge release")
+    if not HUGE_DIR.exists():
+        print("ERROR: Hugepages sysfs directory not found.", file=sys.stderr)
+        sys.exit(1)
+    print("Releasing all hugepages...")
+    try:
+        write_sysfs(NR_HUGEPAGES, "0")
+    except OSError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    print("DONE: Memory restored to host.")
+
+def cmd_huge_allocate(needed: int) -> None:
+    require_root(f"huge allocate {needed}")
+    if not HUGE_DIR.exists():
+        print("ERROR: Hugepages sysfs directory not found.", file=sys.stderr)
+        sys.exit(1)
+
+    initial_allocated = 0
+    try:
+        initial_allocated = read_sysfs(NR_HUGEPAGES)
+    except OSError:
+        pass
+
+    needed_kb = needed * 2048
+    avail_kb = parse_meminfo().get("MemAvailable", 0)
+
+    if needed_kb > avail_kb:
+        print(f"ERROR: Cannot allocate {needed} hugepages ({fmt_size(needed_kb)}).", file=sys.stderr)
+        print(f"Only {fmt_size(avail_kb)} of memory is currently available.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Preparing allocation for {needed} hugepages...")
+    try:
+        write_sysfs(DROP_CACHES, "3")
+    except OSError as e:
+        print(f"WARNING: Failed to drop caches: {e}")
+
+    success = False
+    allocated = initial_allocated
+
+    for i in range(TIMEOUT):
+        try:
+            write_sysfs(COMPACT_MEMORY, "1")
+        except OSError:
+            pass
+
+        try:
+            write_sysfs(NR_HUGEPAGES, str(needed))
+            allocated = read_sysfs(NR_HUGEPAGES)
+        except OSError as e:
+            print(f"\nERROR: Sysfs write/read failed: {e}", file=sys.stderr)
+            break
+
+        if allocated >= needed:
+            success = True
+            print("\r\033[K", end="", flush=True)
+            break
+
+        spin = SPINNER[i % len(SPINNER)]
+        print(f"\r{spin} Compacting... ({allocated} / {needed})", end="", flush=True)
+        time.sleep(1)
+
+    if success:
+        print(f"DONE: Successfully allocated {allocated} hugepages.")
+    else:
+        print("\r\033[K", end="", flush=True)
+        print("FAIL: Timeout or error reached! Memory fragmentation is too high.")
+        print(f"Only managed to get {allocated} / {needed}.")
+        print(f"Reverting to initial state ({initial_allocated} pages)...")
+        try:
+            write_sysfs(NR_HUGEPAGES, str(initial_allocated))
+        except OSError:
+            pass
+        sys.exit(1)
+
+# -- Entry Point ---------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="memctl",
+        description="Memory control, swap release, cache dropping, and hugepages management.",
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Subcommand to execute")
+
+    # info
+    subparsers.add_parser("info", help="Show comprehensive memory status")
+
+    # swap
+    p_swap = subparsers.add_parser("swap", help="Swap management")
+    swap_sub = p_swap.add_subparsers(dest="swap_command")
+    p_swap_release = swap_sub.add_parser("release", help="Release swap back to RAM")
+    p_swap_release.add_argument("-f", "--force", action="store_true", help="Force swap release despite low RAM warning")
+    swap_sub.add_parser("status", help="Show swap status")
+
+    # cache
+    p_cache = subparsers.add_parser("cache", help="Cache management")
+    cache_sub = p_cache.add_subparsers(dest="cache_command")
+    p_cache_drop = cache_sub.add_parser("drop", help="Drop caches")
+    p_cache_drop.add_argument("level", type=int, nargs="?", default=3, choices=[1, 2, 3], help="Drop level (1: pagecache, 2: dentries/inodes, 3: both [default])")
+
+    # huge
+    p_huge = subparsers.add_parser("huge", help="Hugepages management")
+    huge_sub = p_huge.add_subparsers(dest="huge_command")
+    huge_sub.add_parser("status", help="Show hugepages status")
+    huge_sub.add_parser("list", help="List processes using hugepages")
+    huge_sub.add_parser("release", help="Release all hugepages")
+    p_huge_set = huge_sub.add_parser("set", help="Allocate N hugepages")
+    p_huge_set.add_argument("count", type=int, help="Number of 2MB hugepages to allocate")
+
+    args = parser.parse_args()
+
+    if args.command is None:
+        cmd_info()
+        return
+
+    if args.command == "info":
+        cmd_info()
+
+    elif args.command == "swap":
+        if args.swap_command == "release":
+            cmd_swap_release(force=args.force)
+        elif args.swap_command == "status" or args.swap_command is None:
+            swap_info = get_swap_info()
+            print("=== Swap & Zswap Status ===")
+            print(f"  Swap Total:       {fmt_size(swap_info['swap_total']):>10}")
+            print(f"  Swap Used:        {fmt_size(swap_info['swap_used']):>10}")
+            print(f"  Swap Free:        {fmt_size(swap_info['swap_free']):>10}")
+            if swap_info['total_compressed'] > 0:
+                print(f"  Compressed Pool:  {fmt_size(swap_info['total_compressed']):>10}")
+                print(f"  Uncompressed Data:{fmt_size(swap_info['total_uncompressed']):>10}")
+                print(f"  Compression Ratio:{swap_info['compression_ratio']:>10.2f}x")
+                print(f"  Net RAM Needed:   {fmt_size(swap_info['net_ram_needed']):>10}")
+            print(f"  Available RAM:    {fmt_size(swap_info['avail_ram']):>10}")
+
+    elif args.command == "cache":
+        if args.cache_command == "drop":
+            cmd_cache_drop(level=args.level)
+
+    elif args.command == "huge":
+        if args.huge_command == "status" or args.huge_command is None:
+            cmd_huge_status()
+        elif args.huge_command == "list":
+            cmd_huge_list()
+        elif args.huge_command == "release":
+            cmd_huge_release()
+        elif args.huge_command == "set":
+            cmd_huge_allocate(args.count)
+
+if __name__ == "__main__":
+    main()
