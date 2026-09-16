@@ -1,7 +1,9 @@
 # Shell integration (OSC 133 for semantic prompt marking)
-# Enables terminal jump-to-prompt, output selection, and command lifecycle tracking
+# Enables terminal jump-to-prompt, output selection, and command lifecycle tracking.
+# Skipped inside kitty, which injects its own OSC 133 integration.
 if status is-interactive
     and test "$TERM" != "linux" -a "$TERM" != "dumb"
+    and not set -q KITTY_WINDOW_ID
 
     # On first prompt draw, wrap fish_prompt to emit A/B around the actual prompt text.
     # This self-removes so subsequent prompts call the wrapped version directly.

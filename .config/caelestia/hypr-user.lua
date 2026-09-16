@@ -52,3 +52,6 @@ hl.config({
         },
     },
 })
+
+-- Force terminals opaque (kitty renders with background_opacity otherwise)
+hl.window_rule({ match = { class = "kitty" }, opaque = true })

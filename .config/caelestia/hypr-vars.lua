@@ -10,4 +10,7 @@ return {
     singleWindowGapsOut = 5,
     touchpadScrollFactor  = 1.0,
     touchpadDisableTyping = false,
+
+    terminal   = "kitty",
+    kbTerminal = { "SUPER + T", "CTRL + T" },
 }
