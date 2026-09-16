@@ -46,32 +46,37 @@ local function parse_edid(edid_path)
     return model_name, prod_hex
 end
 
--- Fetch all physically connected monitors on primary GPU
+-- Fetch all physically connected monitors by scanning sysfs DRM entries
 local function get_physical_monitors()
     local monitors = {}
-    local connectors = { "eDP-1", "HDMI-A-1", "DP-1", "HDMI-A-2" }
-    local card_prefix = "/sys/class/drm/card1-"
+    local f = io.popen("ls -1 /sys/class/drm/ 2>/dev/null")
+    if not f then
+        if hl and hl.get_monitors then return hl.get_monitors() end
+        return monitors
+    end
 
-    for _, conn in ipairs(connectors) do
-        local path = card_prefix .. conn
-        local status_f = io.open(path .. "/status", "r")
-        if status_f then
-            local status = status_f:read("*l")
-            status_f:close()
-
-            if status == "connected" then
-                local model_name, prod_hex = parse_edid(path .. "/edid")
-                table.insert(monitors, {
-                    name = conn,
-                    model = model_name or prod_hex,
-                    prod_hex = prod_hex,
-                    description = model_name or prod_hex,
-                })
+    for entry in f:lines() do
+        local conn = entry:match("^card%d+%-(.+)$")
+        if conn then
+            local path = "/sys/class/drm/" .. entry
+            local status_f = io.open(path .. "/status", "r")
+            if status_f then
+                local status = status_f:read("*l")
+                status_f:close()
+                if status == "connected" then
+                    local model_name, prod_hex = parse_edid(path .. "/edid")
+                    table.insert(monitors, {
+                        name = conn,
+                        model = model_name or prod_hex,
+                        prod_hex = prod_hex,
+                        description = model_name or prod_hex,
+                    })
+                end
             end
         end
     end
+    f:close()
 
-    -- Fallback to hl.get_monitors() if sysfs probe returned empty
     if #monitors == 0 and hl and hl.get_monitors then
         return hl.get_monitors()
     end
