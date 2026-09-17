@@ -24,6 +24,15 @@ hl.device({
     accel_profile = "adaptive",
 })
 
+-- Remove the stock 4-finger swipe-down gesture (suspend-then-hibernate) so it can
+-- no longer lock the session; sleep stays available via SUPER + SHIFT + L
+local vars = require("variables")
+hl.gesture({
+    fingers   = vars.gestureFingersMore,
+    direction = "down",
+    action    = "unset",
+})
+
 -- Load display configurations & management
 require("hypr-user.displays")
 
