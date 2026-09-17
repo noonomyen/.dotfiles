@@ -61,7 +61,3 @@ hl.config({
         },
     },
 })
-
--- Bypass the global window opacity for terminals so the app's own alpha governs
--- translucency (kitty: background_opacity in kitty.conf); compositor blur still applies
-hl.window_rule({ match = { class = "kitty" }, opaque = true })

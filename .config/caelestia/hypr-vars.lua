@@ -4,6 +4,7 @@ local DisplayManager = require("lib.display-manager")
 DisplayManager.install_hook()
 
 return {
+    windowOpacity       = 1.0,
     windowGapsIn        = 2,
     windowGapsOut       = 5,
     workspaceGaps       = 0,
